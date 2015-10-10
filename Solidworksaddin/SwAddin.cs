@@ -10,6 +10,7 @@ using SolidWorksTools;
 using SolidWorksTools.File;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 
 namespace Solidworksaddin
@@ -170,9 +171,10 @@ namespace Solidworksaddin
             AddPMP();
             #endregion
 
+
             return true;
         }
-
+       
         public bool DisconnectFromSW()
         {
             RemoveCommandMgr();
@@ -397,8 +399,91 @@ namespace Solidworksaddin
 
         public void Test()
         {
-            System.Windows.Forms.MessageBox.Show("Test");
+             
+            ModelDoc2 swDoc = null;
+            PartDoc swPart = null;
+            DrawingDoc swDrawing = null;
+            AssemblyDoc swAssembly = null;
+            bool boolstatus = false;
+            int longstatus = 0;
+            int longwarnings = 0;
+            string[] Files;
+            string extension;
+            string filename;
+            Files = GetFiles(SolidworksFormats.Drawing,10043);
+            if (Files != null)
+            {
+                for (int i = 0; i < Files.Length; i++)
+                {
+                    swDoc = ((ModelDoc2)(iSwApp.OpenDoc6(Files[i], 3, 0, "", ref longstatus, ref longwarnings)));
+                    extension = System.IO.Path.GetExtension(Files[i]);
+                    filename = System.IO.Path.GetFileNameWithoutExtension(Files[i]);
+                    System.Windows.Forms.MessageBox.Show(Files[i].Substring(0, Files[i].Length - extension.Length) + EDrawingFormats.Drawing);
+                    longstatus = swDoc.SaveAs3(Files[i].Substring(0,Files[i].Length-extension.Length)+EDrawingFormats.Drawing,0,0);
+                    //System.Windows.Forms.MessageBox.Show(swDoc.Printer);
+                    iSwApp.CloseDoc(filename);
+                }
+            }
+           
+           /* swDoc = ((ModelDoc2)(iSwApp.OpenDoc6("C:\\Users\\alex\\Desktop\\Zeichnung1.SLDDRW", 3, 0, "", ref longstatus, ref longwarnings)));
+            iSwApp.ActivateDoc2("Zeichnung1 - Blatt1", false, ref longstatus);
+            swDoc = ((ModelDoc2)(iSwApp.ActiveDoc));
+            swDoc = ((ModelDoc2)(iSwApp.ActiveDoc));
+            ModelView myModelView = null;
+            myModelView = ((ModelView)(swDoc.ActiveView));
+            myModelView.FrameLeft = 0;
+            myModelView.FrameTop = 0;
+            myModelView = ((ModelView)(swDoc.ActiveView));
+            myModelView.FrameState = ((int)(swWindowState_e.swWindowMaximized));
+            swDrawing = ((DrawingDoc)(swDoc));
+            */
+          //  System.Windows.Forms.MessageBox.Show(iSwApp.ActivePrinter.ToString());
+          // System.Windows.Forms.MessageBox.Show( swDrawing.GetSheetCount().ToString());
+            /*
+            boolstatus = swDrawing.SetupSheet5("Blatt1", 12, 12, 1, 1, false, "a3 - iso.slddrt", 0.20999999999999999, 0.29699999999999999, "Standard", true);
+            swDoc.ViewZoomtofit2();
+            swDoc.ViewZoomtofit2();
+            swDoc = null;
+            iSwApp.CloseDoc("Zeichnung1 - Blatt1");
+        */
+           // System.Windows.Forms.MessageBox.Show("Test Test");
         }
+
+        public string[] GetFiles(string Extensions, int Project)
+        {
+            string[] files;
+            string path = string.Format(@"C:\Users\alex\Desktop\{0}", Project.ToString());
+            if(Directory.Exists(path))
+            {
+               // System.Windows.Forms.MessageBox.Show("Test Test");
+                files = Directory.GetFiles(path, "*" + Extensions, SearchOption.AllDirectories);
+            if (files.Length == 0)
+                return null;
+            return files;
+            }
+            else
+            {//
+                System.Windows.Forms.MessageBox.Show("Test Test");
+                return null;
+            }
+        }
+
+        public class SolidworksFormats
+        {
+            public const string Part = ".SLDPRT";
+            public const string Assembly = ".SLDASM";
+            public const string Drawing = ".SLDDRW";
+            public const string Library = ".SLDLFP";
+        }
+
+        public class EDrawingFormats
+        {
+            public const string Part = ".EPRT";
+            public const string Assembly = ".EASM";
+            public const string Drawing = ".EDRW";
+       
+        }
+
         public void ShowPMP()
         {
             if (ppage != null)
