@@ -35,6 +35,7 @@ namespace Solidworksaddin
         public const int mainItemID1 = 0;
         public const int mainItemID2 = 1;
         public const int mainItemID3 = 2;
+        public const int mainItemID4 = 3;
         public const int flyoutGroupID = 91;
 
         #region Event Handler Variables
@@ -200,7 +201,7 @@ namespace Solidworksaddin
             if (iBmp == null)
                 iBmp = new BitmapHandler();
             Assembly thisAssembly;
-            int cmdIndex0, cmdIndex1;
+            int cmdIndex0, cmdIndex1,cmdIndex2;
             string Title = "C# Addin", ToolTip = "C# Addin";
 
 
@@ -237,7 +238,7 @@ namespace Solidworksaddin
             int menuToolbarOption = (int)(swCommandItemType_e.swMenuItem | swCommandItemType_e.swToolbarItem);
             cmdIndex0 = cmdGroup.AddCommandItem2("CreateCube", -1, "Create a cube", "Create cube", 0, "CreateCube", "", mainItemID1, menuToolbarOption);
             cmdIndex1 = cmdGroup.AddCommandItem2("Show PMP", -1, "Display sample property manager", "Show PMP", 2, "ShowPMP", "EnablePMP", mainItemID2, menuToolbarOption);
-
+            cmdIndex2 = cmdGroup.AddCommandItem2("Test ", -1, "Test Function", "Test", 2, "Test", "", mainItemID4, menuToolbarOption);
             cmdGroup.HasToolbar = true;
             cmdGroup.HasMenu = true;
             cmdGroup.Activate();
@@ -274,8 +275,8 @@ namespace Solidworksaddin
 
                     CommandTabBox cmdBox = cmdTab.AddCommandTabBox();
 
-                    int[] cmdIDs = new int[3];
-                    int[] TextType = new int[3];
+                    int[] cmdIDs = new int[4];
+                    int[] TextType = new int[4];
 
                     cmdIDs[0] = cmdGroup.get_CommandID(cmdIndex0);
 
@@ -288,6 +289,10 @@ namespace Solidworksaddin
                     cmdIDs[2] = cmdGroup.ToolbarId;
 
                     TextType[2] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal | (int)swCommandTabButtonFlyoutStyle_e.swCommandTabButton_ActionFlyout;
+
+                    cmdIDs[3] = cmdGroup.get_CommandID(cmdIndex2);
+
+                    TextType[3] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal;
 
                     bResult = cmdBox.AddCommands(cmdIDs, TextType);
 
@@ -390,7 +395,10 @@ namespace Solidworksaddin
             }
         }
 
-
+        public void Test()
+        {
+            System.Windows.Forms.MessageBox.Show("Test");
+        }
         public void ShowPMP()
         {
             if (ppage != null)
