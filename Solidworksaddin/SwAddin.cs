@@ -66,7 +66,9 @@ namespace Solidworksaddin
 
         #endregion
 
-        #region SolidWorks Registration
+       ///Will be registered in WiX Toolset
+        #region SolidWorks Registration 
+        /*
         [ComRegisterFunctionAttribute]
         public static void RegisterFunction(Type t)
         {
@@ -140,9 +142,9 @@ namespace Solidworksaddin
                 System.Windows.Forms.MessageBox.Show("There was a problem unregistering this dll: \n\"" + e.Message + "\"");
             }
         }
-
+         */
         #endregion
-
+        
         #region ISwAddin Implementation
         public SwAddin()
         {
