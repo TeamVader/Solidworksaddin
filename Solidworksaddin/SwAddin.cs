@@ -1,3 +1,9 @@
+
+
+//// For debugging only -> for creating .msi please undef Debug
+#define Debug
+//#undef Debug
+
 using System;
 using System.Runtime.InteropServices;
 using System.Collections;
@@ -11,6 +17,7 @@ using SolidWorksTools.File;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+
 
 
 namespace Solidworksaddin
@@ -67,8 +74,9 @@ namespace Solidworksaddin
         #endregion
 
        ///Will be registered in WiX Toolset
+       #if (Debug)
         #region SolidWorks Registration 
-        /*
+        
         [ComRegisterFunctionAttribute]
         public static void RegisterFunction(Type t)
         {
@@ -142,9 +150,11 @@ namespace Solidworksaddin
                 System.Windows.Forms.MessageBox.Show("There was a problem unregistering this dll: \n\"" + e.Message + "\"");
             }
         }
-         */
-        #endregion
         
+        #endregion
+        #endif
+
+
         #region ISwAddin Implementation
         public SwAddin()
         {
