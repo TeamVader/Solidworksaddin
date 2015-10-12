@@ -427,38 +427,170 @@ namespace Solidworksaddin
             {
                 for (int i = 0; i < Files.Length; i++)
                 {
-                    swDoc = ((ModelDoc2)(iSwApp.OpenDoc6(Files[i], 3, 0, "", ref longstatus, ref longwarnings)));
-                    extension = System.IO.Path.GetExtension(Files[i]);
-                    filename = System.IO.Path.GetFileNameWithoutExtension(Files[i]);
-                    System.Windows.Forms.MessageBox.Show(Files[i].Substring(0, Files[i].Length - extension.Length) + EDrawingFormats.Drawing);
-                    longstatus = swDoc.SaveAs3(Files[i].Substring(0,Files[i].Length-extension.Length)+EDrawingFormats.Drawing,0,0);
+                   // swDrawing = ((DrawingDoc)(iSwApp.OpenDoc6(Files[i], 3, 0, "", ref longstatus, ref longwarnings)));
+                   // extension = System.IO.Path.GetExtension(Files[i]);
+                  //  filename = System.IO.Path.GetFileNameWithoutExtension(Files[i]);
+                   // System.Windows.Forms.MessageBox.Show(Files[i].Substring(0, Files[i].Length - extension.Length) + EDrawingFormats.Drawing);
+                   // longstatus = swDoc.SaveAs3(Files[i].Substring(0,Files[i].Length-extension.Length)+EDrawingFormats.Drawing,0,0);
                     //System.Windows.Forms.MessageBox.Show(swDoc.Printer);
-                    iSwApp.CloseDoc(filename);
+                   // PrintSheets(Files[i]);
+
+                    //iSwApp.CloseDoc(filename);
                 }
             }
-           
+            PrintactiveSheet();
            /* swDoc = ((ModelDoc2)(iSwApp.OpenDoc6("C:\\Users\\alex\\Desktop\\Zeichnung1.SLDDRW", 3, 0, "", ref longstatus, ref longwarnings)));
-            iSwApp.ActivateDoc2("Zeichnung1 - Blatt1", false, ref longstatus);
-            swDoc = ((ModelDoc2)(iSwApp.ActiveDoc));
-            swDoc = ((ModelDoc2)(iSwApp.ActiveDoc));
-            ModelView myModelView = null;
-            myModelView = ((ModelView)(swDoc.ActiveView));
-            myModelView.FrameLeft = 0;
-            myModelView.FrameTop = 0;
-            myModelView = ((ModelView)(swDoc.ActiveView));
-            myModelView.FrameState = ((int)(swWindowState_e.swWindowMaximized));
-            swDrawing = ((DrawingDoc)(swDoc));
-            */
-          //  System.Windows.Forms.MessageBox.Show(iSwApp.ActivePrinter.ToString());
-          // System.Windows.Forms.MessageBox.Show( swDrawing.GetSheetCount().ToString());
-            /*
-            boolstatus = swDrawing.SetupSheet5("Blatt1", 12, 12, 1, 1, false, "a3 - iso.slddrt", 0.20999999999999999, 0.29699999999999999, "Standard", true);
-            swDoc.ViewZoomtofit2();
-            swDoc.ViewZoomtofit2();
-            swDoc = null;
-            iSwApp.CloseDoc("Zeichnung1 - Blatt1");
+            
         */
            // System.Windows.Forms.MessageBox.Show("Test Test");
+        }
+
+
+        /// <summary>
+        /// Prints the actual Sheet
+        /// </summary>
+        public void PrintactiveSheet()
+        {
+            DrawingDoc swDrawing = null;
+            PageSetup setup = null;
+            ModelDoc2 model = null;
+            Sheet sheet = null;
+            int longstatus = 0;
+            int longwarnings = 0;
+            int papersize = 0;
+            int sheetnumber = 0;
+            string[] sheetlist = null;
+            double width = 0;
+            double heigth = 0;
+
+            model = iSwApp.ActiveDoc;
+            if (model.GetType() == (int)swDocumentTypes_e.swDocDRAWING)
+            {
+                swDrawing = (DrawingDoc)model;
+                setup = model.PageSetup;
+                
+                sheet = swDrawing.GetCurrentSheet();
+                sheetlist = (string[])swDrawing.GetSheetNames();  
+                papersize = sheet.GetSize(ref width, ref heigth);
+               // Debug.Print("ID {0}",sheet.GetID());
+
+                for (int i = 1; i < sheetlist.Length + 1; i++)
+                {
+                    sheetnumber = i;
+                    if (sheetlist[i-1] == sheet.GetName())
+                        break;
+                }
+
+
+                switch (papersize)
+                {
+                    case (int)swDwgPaperSizes_e.swDwgPaperA4size:
+                        Debug.Print("A4");
+                        setup.PrinterPaperSize = (int)swDwgPaperSizes_e.swDwgPaperA4size;
+                        setup.Orientation = (int)swPageSetupOrientation_e.swPageSetupOrient_Landscape; //Landscape
+                        model.Extension.PrintOut(sheetnumber, sheetnumber, 1, true, "", "");
+                        break;
+                    case (int)swDwgPaperSizes_e.swDwgPaperA4sizeVertical:
+                        Debug.Print("A4 vertical");
+                        setup.PrinterPaperSize = (int)swDwgPaperSizes_e.swDwgPaperA4sizeVertical;
+                        setup.Orientation = (int)swPageSetupOrientation_e.swPageSetupOrient_Portrait; //Portrait
+                        model.Extension.PrintOut(sheetnumber, sheetnumber, 1, true, "", "");
+                        break;
+                }
+
+            }
+        }
+
+
+        /// <summary>
+        /// Print Sheets in a Drawing
+        /// </summary>
+        /// <param name="filename"></param>
+        public void PrintSheets(string filename)
+        {
+            DrawingDoc swDrawing = null;
+            PageSetup setup = null;
+            ModelDoc2 model = null;
+            string title = "";
+           // PrintSpecification printspec = null;
+            int longstatus = 0;
+            int longwarnings = 0;
+            int papersize = 0;
+            string[] sheetlist = null;
+            double width = 0;
+            double heigth = 0;
+
+            try
+            {
+                
+                
+                model = ((ModelDoc2)(iSwApp.OpenDoc6(filename,(int)swDocumentTypes_e.swDocDRAWING, (int)swOpenDocOptions_e.swOpenDocOptions_Silent, "", ref longstatus, ref longwarnings)));
+                if (model.GetType() == (int)swDocumentTypes_e.swDocDRAWING)
+                {
+                    swDrawing = (DrawingDoc)model;
+                    title = model.GetTitle();
+                    
+                }
+                else
+                {
+                    return;
+                }
+                //System.Windows.Forms.MessageBox.Show("");
+                //swDwgPaperSizes_e.swDwgPaperA4sizeVertical
+                sheetlist = (string[])swDrawing.GetSheetNames();
+                for (int i = 1; i < sheetlist.Length + 1;i++ )
+                {
+                    
+                    setup = model.PageSetup;
+                   // Debug.Print("Size: {0} , Orientation : {1}", setup.PrinterPaperSize, setup.Orientation);
+                   // Debug.Print(swDrawing.Sheet[sheetlist[i]].GetName());
+                    //Debug.Print(swDrawing.Sheet[sheetlist[i]].GetSheetFormatName());
+                   // Debug.Print(swDrawing.Sheet[sheetlist[i]].GetSheetFormatName());
+                    papersize = swDrawing.Sheet[sheetlist[i-1]].GetSize(ref width, ref heigth);
+                     
+                   // Debug.Print(string.Format("{0} x {1}", width, heigth));
+                   // model.Extension.UsePageSetup = swPageSetupinuse
+                  //  model.Extension.UsePageSetup = setup;
+                  //  model.Extension.PrintOut(i, i, 1, true, "", "");
+                    //swDrawing.Sheet[sh.GetName()].GetSheetFormatName();
+                    switch (papersize)
+                    {
+                        case (int)swDwgPaperSizes_e.swDwgPaperA4size :
+                            Debug.Print("A4");
+                            setup.PrinterPaperSize = (int)swDwgPaperSizes_e.swDwgPaperA4size;
+                            setup.Orientation = (int)swPageSetupOrientation_e.swPageSetupOrient_Landscape; //Landscape
+                           // System.Windows.Forms.MessageBox.Show("");
+                            model.Extension.PrintOut(i,i,1,true,"","");
+                            break;
+                        case (int)swDwgPaperSizes_e.swDwgPaperA4sizeVertical:
+                            Debug.Print("A4 vertical");
+                            setup.PrinterPaperSize = (int)swDwgPaperSizes_e.swDwgPaperA4sizeVertical;
+                            setup.Orientation = (int)swPageSetupOrientation_e.swPageSetupOrient_Portrait; //Portrait
+                           // System.Windows.Forms.MessageBox.Show("");
+                            model.Extension.PrintOut(i, i, 1, true, "", "");
+                            break;
+                    }
+
+                }
+               
+                iSwApp.CloseDoc(title);
+            }
+            catch (Exception ex)
+            {
+
+              System.Windows.Forms.MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+                sheetlist = null;
+                swDrawing = null;
+            }
+        }
+
+        public void SaveEDrawings()
+        {
+            int longstatus;
+           // longstatus = swDoc.SaveAs3(Files[i].Substring(0, Files[i].Length - extension.Length) + EDrawingFormats.Drawing, 0, 0);
         }
 
         public string[] GetFiles(string Extensions, int Project)
