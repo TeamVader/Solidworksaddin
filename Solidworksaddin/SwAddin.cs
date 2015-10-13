@@ -8,7 +8,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Collections;
 using System.Reflection;
-
+using System.Windows.Forms;
 using SolidWorks.Interop.sldworks;
 using SolidWorks.Interop.swpublished;
 using SolidWorks.Interop.swconst;
@@ -215,8 +215,8 @@ namespace Solidworksaddin
             if (iBmp == null)
                 iBmp = new BitmapHandler();
             Assembly thisAssembly;
-            int cmdIndex0, cmdIndex1,cmdIndex2;
-            string Title = "C# Addin", ToolTip = "C# Addin";
+            int cmdIndex0, cmdIndex1,cmdIndex2,cmdIndex3;
+            string Title = "Alex's Solidworks Addin", ToolTip = "Alex's Solidworks Addin";
 
 
             int[] docTypes = new int[]{(int)swDocumentTypes_e.swDocASSEMBLY,
@@ -250,9 +250,11 @@ namespace Solidworksaddin
             cmdGroup.SmallMainIcon = iBmp.CreateFileFromResourceBitmap("Solidworksaddin.MainIconSmall.bmp", thisAssembly);
 
             int menuToolbarOption = (int)(swCommandItemType_e.swMenuItem | swCommandItemType_e.swToolbarItem);
-            cmdIndex0 = cmdGroup.AddCommandItem2("CreateCube", -1, "Create a cube", "Create cube", 0, "CreateCube", "", mainItemID1, menuToolbarOption);
-            cmdIndex1 = cmdGroup.AddCommandItem2("Show PMP", -1, "Display sample property manager", "Show PMP", 2, "ShowPMP", "EnablePMP", mainItemID2, menuToolbarOption);
-            cmdIndex2 = cmdGroup.AddCommandItem2("Test ", -1, "Test Function", "Test", 2, "Test", "", mainItemID4, menuToolbarOption);
+            cmdIndex0 = cmdGroup.AddCommandItem2("Print Active Sheet", -1, "Print the active Sheet to the default Folder", "Print Sheet", 0, "PrintactiveSheet", "", mainItemID1, menuToolbarOption);
+            cmdIndex1 = cmdGroup.AddCommandItem2("Print Active Document ", -1, "Print Active Document with all Sheets", "Print Active Document", 2, "PrintActiveDocument", "", mainItemID2, menuToolbarOption);
+            cmdIndex2 = cmdGroup.AddCommandItem2("Print all Files in Folder ", -1, "Print all Files in Folder", "Print all Files in Folder", 2, "Print_Files_in_Folder", "", mainItemID3, menuToolbarOption);
+            cmdIndex3 = cmdGroup.AddCommandItem2("Show PMP", -1, "Display sample property manager", "Show PMP", 2, "ShowPMP", "EnablePMP", mainItemID4, menuToolbarOption);
+
             cmdGroup.HasToolbar = true;
             cmdGroup.HasMenu = true;
             cmdGroup.Activate();
@@ -289,8 +291,8 @@ namespace Solidworksaddin
 
                     CommandTabBox cmdBox = cmdTab.AddCommandTabBox();
 
-                    int[] cmdIDs = new int[4];
-                    int[] TextType = new int[4];
+                    int[] cmdIDs = new int[5];
+                    int[] TextType = new int[5];
 
                     cmdIDs[0] = cmdGroup.get_CommandID(cmdIndex0);
 
@@ -300,13 +302,20 @@ namespace Solidworksaddin
 
                     TextType[1] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal;
 
-                    cmdIDs[2] = cmdGroup.ToolbarId;
+                    cmdIDs[2] = cmdGroup.get_CommandID(cmdIndex2);
 
-                    TextType[2] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal | (int)swCommandTabButtonFlyoutStyle_e.swCommandTabButton_ActionFlyout;
+                    TextType[2] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal;
 
-                    cmdIDs[3] = cmdGroup.get_CommandID(cmdIndex2);
+                    cmdIDs[3] = cmdGroup.get_CommandID(cmdIndex3);
 
                     TextType[3] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal;
+
+
+                    cmdIDs[4] = cmdGroup.ToolbarId;
+
+                    TextType[4] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal | (int)swCommandTabButtonFlyoutStyle_e.swCommandTabButton_ActionFlyout;
+
+                    
 
                     bResult = cmdBox.AddCommands(cmdIDs, TextType);
 
@@ -409,7 +418,7 @@ namespace Solidworksaddin
             }
         }
 
-        public void Test()
+        public void Print_Files_in_Folder()
         {
              
             ModelDoc2 swDoc = null;
@@ -422,27 +431,28 @@ namespace Solidworksaddin
             string[] Files;
             string extension;
             string filename;
-            Files = GetFiles(SolidworksFormats.Drawing,10043);
+
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            DialogResult result = fbd.ShowDialog();
+
+            if(result!=DialogResult.OK)
+                return;
+            
+
+            Files = GetFiles(SolidworksFormats.Drawing,fbd.SelectedPath);
             if (Files != null)
             {
                 for (int i = 0; i < Files.Length; i++)
                 {
-                   // swDrawing = ((DrawingDoc)(iSwApp.OpenDoc6(Files[i], 3, 0, "", ref longstatus, ref longwarnings)));
-                   // extension = System.IO.Path.GetExtension(Files[i]);
-                  //  filename = System.IO.Path.GetFileNameWithoutExtension(Files[i]);
-                   // System.Windows.Forms.MessageBox.Show(Files[i].Substring(0, Files[i].Length - extension.Length) + EDrawingFormats.Drawing);
-                   // longstatus = swDoc.SaveAs3(Files[i].Substring(0,Files[i].Length-extension.Length)+EDrawingFormats.Drawing,0,0);
-                    //System.Windows.Forms.MessageBox.Show(swDoc.Printer);
-                   // PrintSheets(Files[i]);
+                    if (!Files[i].Contains("$"))
+                    {
+                        // PrintSheets(Files[i],True);
 
-                    //iSwApp.CloseDoc(filename);
+                        Debug.Print(Files[i]);
+                    }
                 }
             }
-            PrintactiveSheet();
-           /* swDoc = ((ModelDoc2)(iSwApp.OpenDoc6("C:\\Users\\alex\\Desktop\\Zeichnung1.SLDDRW", 3, 0, "", ref longstatus, ref longwarnings)));
             
-        */
-           // System.Windows.Forms.MessageBox.Show("Test Test");
         }
 
 
@@ -488,25 +498,36 @@ namespace Solidworksaddin
                         Debug.Print("A4");
                         setup.PrinterPaperSize = (int)swDwgPaperSizes_e.swDwgPaperA4size;
                         setup.Orientation = (int)swPageSetupOrientation_e.swPageSetupOrient_Landscape; //Landscape
-                        model.Extension.PrintOut(sheetnumber, sheetnumber, 1, true, "", "");
+                       // model.Extension.PrintOut(sheetnumber, sheetnumber, 1, true, "", "");
                         break;
                     case (int)swDwgPaperSizes_e.swDwgPaperA4sizeVertical:
                         Debug.Print("A4 vertical");
                         setup.PrinterPaperSize = (int)swDwgPaperSizes_e.swDwgPaperA4sizeVertical;
                         setup.Orientation = (int)swPageSetupOrientation_e.swPageSetupOrient_Portrait; //Portrait
-                        model.Extension.PrintOut(sheetnumber, sheetnumber, 1, true, "", "");
+                       // model.Extension.PrintOut(sheetnumber, sheetnumber, 1, true, "", "");
                         break;
                 }
 
             }
         }
 
+        public void PrintActiveDocument()
+        {
+            DrawingDoc swDrawing = null;
+            PageSetup setup = null;
+            ModelDoc2 model = null;
 
+            model = iSwApp.ActiveDoc;
+            if(model.GetType() == (int)swDocumentTypes_e.swDocDRAWING)
+            {
+            PrintSheets(model.GetTitle(),false);
+            }
+        }
         /// <summary>
         /// Print Sheets in a Drawing
         /// </summary>
         /// <param name="filename"></param>
-        public void PrintSheets(string filename)
+        public void PrintSheets(string filename,bool Closefiles)
         {
             DrawingDoc swDrawing = null;
             PageSetup setup = null;
@@ -559,21 +580,21 @@ namespace Solidworksaddin
                             Debug.Print("A4");
                             setup.PrinterPaperSize = (int)swDwgPaperSizes_e.swDwgPaperA4size;
                             setup.Orientation = (int)swPageSetupOrientation_e.swPageSetupOrient_Landscape; //Landscape
-                           // System.Windows.Forms.MessageBox.Show("");
-                            model.Extension.PrintOut(i,i,1,true,"","");
+                         //   model.Extension.PrintOut(i,i,1,true,"","");
                             break;
                         case (int)swDwgPaperSizes_e.swDwgPaperA4sizeVertical:
                             Debug.Print("A4 vertical");
                             setup.PrinterPaperSize = (int)swDwgPaperSizes_e.swDwgPaperA4sizeVertical;
                             setup.Orientation = (int)swPageSetupOrientation_e.swPageSetupOrient_Portrait; //Portrait
-                           // System.Windows.Forms.MessageBox.Show("");
-                            model.Extension.PrintOut(i, i, 1, true, "", "");
+                        //    model.Extension.PrintOut(i, i, 1, true, "", "");
                             break;
                     }
 
                 }
-               
-                iSwApp.CloseDoc(title);
+                if (Closefiles)
+                {
+                    iSwApp.CloseDoc(title);
+                }
             }
             catch (Exception ex)
             {
@@ -593,10 +614,10 @@ namespace Solidworksaddin
            // longstatus = swDoc.SaveAs3(Files[i].Substring(0, Files[i].Length - extension.Length) + EDrawingFormats.Drawing, 0, 0);
         }
 
-        public string[] GetFiles(string Extensions, int Project)
+        public string[] GetFiles(string Extensions, string Folder)
         {
             string[] files;
-            string path = string.Format(@"C:\Users\alex\Desktop\{0}", Project.ToString());
+            string path = Folder.ToString();
             if(Directory.Exists(path))
             {
                // System.Windows.Forms.MessageBox.Show("Test Test");
@@ -607,7 +628,7 @@ namespace Solidworksaddin
             }
             else
             {//
-                System.Windows.Forms.MessageBox.Show("Test Test");
+                System.Windows.Forms.MessageBox.Show("Directory not found");
                 return null;
             }
         }
