@@ -27,8 +27,8 @@ namespace Solidworksaddin
     /// </summary>
     [Guid("5d8a1f46-ea8c-4ddb-8581-0a52f24245a0"), ComVisible(true)]
     [SwAddin(
-        Description = "Solidworksaddin description",
-        Title = "Solidworksaddin",
+        Description = "Alexs Solidworks AddIn",
+        Title = "SolidWorks AddIn",
         LoadAtStartup = true
         )]
     public class SwAddin : ISwAddin
@@ -225,6 +225,7 @@ namespace Solidworksaddin
 
             thisAssembly = System.Reflection.Assembly.GetAssembly(this.GetType());
 
+           // MessageBox.Show(this.GetType().ToString());
 
             int cmdGroupErr = 0;
             bool ignorePrevious = false;
@@ -233,12 +234,15 @@ namespace Solidworksaddin
             //get the ID information stored in the registry
             bool getDataResult = iCmdMgr.GetGroupDataFromRegistry(mainCmdGroupID, out registryIDs);
 
-            int[] knownIDs = new int[2] { mainItemID1, mainItemID2 };
+            int[] knownIDs = new int[4] { mainItemID1, mainItemID2,mainItemID3,mainItemID4 };
 
             if (getDataResult)
             {
+                //MessageBox.Show(registryIDs.ToString());
+
                 if (!CompareIDs((int[])registryIDs, knownIDs)) //if the IDs don't match, reset the commandGroup
                 {
+                    MessageBox.Show(registryIDs.ToString());
                     ignorePrevious = true;
                 }
             }
@@ -250,8 +254,8 @@ namespace Solidworksaddin
             cmdGroup.SmallMainIcon = iBmp.CreateFileFromResourceBitmap("Solidworksaddin.MainIconSmall.bmp", thisAssembly);
 
             int menuToolbarOption = (int)(swCommandItemType_e.swMenuItem | swCommandItemType_e.swToolbarItem);
-            cmdIndex0 = cmdGroup.AddCommandItem2("Print Active Sheet", -1, "Print the active Sheet to the default Folder", "Print Sheet", 0, "PrintactiveSheet", "", mainItemID1, menuToolbarOption);
-            cmdIndex1 = cmdGroup.AddCommandItem2("Print Active Document ", -1, "Print Active Document with all Sheets", "Print Active Document", 2, "PrintActiveDocument", "", mainItemID2, menuToolbarOption);
+            cmdIndex0 = cmdGroup.AddCommandItem2("Print Active Sheet", -1, "Print the active Sheet to the default Folder", "Print Sheet",0, "PrintactiveSheet", "", mainItemID1, menuToolbarOption);
+            cmdIndex1 = cmdGroup.AddCommandItem2("Print Active Document ", -1, "Print Active Document with all Sheets", "Print Active Document", 1, "PrintActiveDocument", "", mainItemID2, menuToolbarOption);
             cmdIndex2 = cmdGroup.AddCommandItem2("Print all Files in Folder ", -1, "Print all Files in Folder", "Print all Files in Folder", 2, "Print_Files_in_Folder", "", mainItemID3, menuToolbarOption);
             cmdIndex3 = cmdGroup.AddCommandItem2("Show PMP", -1, "Display sample property manager", "Show PMP", 2, "ShowPMP", "EnablePMP", mainItemID4, menuToolbarOption);
 
@@ -262,7 +266,7 @@ namespace Solidworksaddin
             bool bResult;
 
 
-
+            
             FlyoutGroup flyGroup = iCmdMgr.CreateFlyoutGroup(flyoutGroupID, "Dynamic Flyout", "Flyout Tooltip", "Flyout Hint",
               cmdGroup.SmallMainIcon, cmdGroup.LargeMainIcon, cmdGroup.SmallIconList, cmdGroup.LargeIconList, "FlyoutCallback", "FlyoutEnable");
 
@@ -270,17 +274,30 @@ namespace Solidworksaddin
             flyGroup.AddCommandItem("FlyoutCommand 1", "test", 0, "FlyoutCommandItem1", "FlyoutEnableCommandItem1");
 
             flyGroup.FlyoutType = (int)swCommandFlyoutStyle_e.swCommandFlyoutStyle_Simple;
-
+            
 
             foreach (int type in docTypes)
             {
-                CommandTab cmdTab;
+                CommandTab cmdTab ;
+               // MessageBox.Show("Not good");
+                /*
+                cmdTab = iCmdMgr.GetCommandTab(type, "C# Addin");
+                iCmdMgr.RemoveCommandTab(cmdTab);
 
+                cmdTab = iCmdMgr.GetCommandTab(type, "Alex SolidWorks AddIn");
+                iCmdMgr.RemoveCommandTab(cmdTab);
+
+                cmdTab = iCmdMgr.GetCommandTab(type, Title);
+                iCmdMgr.RemoveCommandTab(cmdTab);
+                */
                 cmdTab = iCmdMgr.GetCommandTab(type, Title);
 
                 if (cmdTab != null & !getDataResult | ignorePrevious)//if tab exists, but we have ignored the registry info (or changed command group ID), re-create the tab.  Otherwise the ids won't matchup and the tab will be blank
                 {
                     bool res = iCmdMgr.RemoveCommandTab(cmdTab);
+
+                    if (res)
+                      //  MessageBox.Show("Not good");
                     cmdTab = null;
                 }
 
@@ -319,7 +336,7 @@ namespace Solidworksaddin
 
                     bResult = cmdBox.AddCommands(cmdIDs, TextType);
 
-
+                    
 
                     CommandTabBox cmdBox1 = cmdTab.AddCommandTabBox();
                     cmdIDs = new int[1];
@@ -329,9 +346,9 @@ namespace Solidworksaddin
                     TextType[0] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextBelow | (int)swCommandTabButtonFlyoutStyle_e.swCommandTabButton_ActionFlyout;
 
                     bResult = cmdBox1.AddCommands(cmdIDs, TextType);
-
+                    
                     cmdTab.AddSeparator(cmdBox1, cmdIDs[0]);
-
+                    
                 }
 
             }
