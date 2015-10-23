@@ -39,11 +39,12 @@ namespace Solidworksaddin
         int addinID = 0;
         BitmapHandler iBmp;
 
-        public const int mainCmdGroupID = 5;
+        public const int mainCmdGroupID = 20;
         public const int mainItemID1 = 0;
         public const int mainItemID2 = 1;
         public const int mainItemID3 = 2;
         public const int mainItemID4 = 3;
+        public const int mainItemID5 = 4;
         public const int flyoutGroupID = 91;
 
         #region Event Handler Variables
@@ -215,7 +216,7 @@ namespace Solidworksaddin
             if (iBmp == null)
                 iBmp = new BitmapHandler();
             Assembly thisAssembly;
-            int cmdIndex0, cmdIndex1,cmdIndex2,cmdIndex3;
+            int cmdIndex0, cmdIndex1, cmdIndex2, cmdIndex3, cmdIndex4;
             string Title = "Alex's Solidworks Addin", ToolTip = "Alex's Solidworks Addin";
 
 
@@ -234,7 +235,7 @@ namespace Solidworksaddin
             //get the ID information stored in the registry
             bool getDataResult = iCmdMgr.GetGroupDataFromRegistry(mainCmdGroupID, out registryIDs);
 
-            int[] knownIDs = new int[4] { mainItemID1, mainItemID2,mainItemID3,mainItemID4 };
+            int[] knownIDs = new int[5] { mainItemID1, mainItemID2,mainItemID3,mainItemID4,mainItemID5 };
 
             if (getDataResult)
             {
@@ -242,7 +243,7 @@ namespace Solidworksaddin
 
                 if (!CompareIDs((int[])registryIDs, knownIDs)) //if the IDs don't match, reset the commandGroup
                 {
-                    MessageBox.Show(registryIDs.ToString());
+                    MessageBox.Show("IDs dont match");
                     ignorePrevious = true;
                 }
             }
@@ -257,7 +258,9 @@ namespace Solidworksaddin
             cmdIndex0 = cmdGroup.AddCommandItem2("Print Active Sheet", -1, "Print the active Sheet to the default Folder", "Print Sheet",0, "PrintactiveSheet", "", mainItemID1, menuToolbarOption);
             cmdIndex1 = cmdGroup.AddCommandItem2("Print Active Document ", -1, "Print Active Document with all Sheets", "Print Active Document", 1, "PrintActiveDocument", "", mainItemID2, menuToolbarOption);
             cmdIndex2 = cmdGroup.AddCommandItem2("Print all Files in Folder ", -1, "Print all Files in Folder", "Print all Files in Folder", 2, "Print_Files_in_Folder", "", mainItemID3, menuToolbarOption);
-            cmdIndex3 = cmdGroup.AddCommandItem2("Show PMP", -1, "Display sample property manager", "Show PMP", 2, "ShowPMP", "EnablePMP", mainItemID4, menuToolbarOption);
+            cmdIndex3 = cmdGroup.AddCommandItem2("Test", -1, "Test Function", "Test Function", 2, "Test_Function", "", mainItemID4, menuToolbarOption);
+
+            cmdIndex4 = cmdGroup.AddCommandItem2("Show PMP", -1, "Display sample property manager", "Show PMP",2, "ShowPMP", "EnablePMP", mainItemID5, menuToolbarOption);
 
             cmdGroup.HasToolbar = true;
             cmdGroup.HasMenu = true;
@@ -291,7 +294,7 @@ namespace Solidworksaddin
                 iCmdMgr.RemoveCommandTab(cmdTab);
                 */
                 cmdTab = iCmdMgr.GetCommandTab(type, Title);
-
+                
                 if (cmdTab != null & !getDataResult | ignorePrevious)//if tab exists, but we have ignored the registry info (or changed command group ID), re-create the tab.  Otherwise the ids won't matchup and the tab will be blank
                 {
                     bool res = iCmdMgr.RemoveCommandTab(cmdTab);
@@ -308,8 +311,8 @@ namespace Solidworksaddin
 
                     CommandTabBox cmdBox = cmdTab.AddCommandTabBox();
 
-                    int[] cmdIDs = new int[5];
-                    int[] TextType = new int[5];
+                    int[] cmdIDs = new int[6];
+                    int[] TextType = new int[6];
 
                     cmdIDs[0] = cmdGroup.get_CommandID(cmdIndex0);
 
@@ -327,10 +330,15 @@ namespace Solidworksaddin
 
                     TextType[3] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal;
 
+                    cmdIDs[4] = cmdGroup.get_CommandID(cmdIndex4);
 
-                    cmdIDs[4] = cmdGroup.ToolbarId;
+                    TextType[4] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal;
 
-                    TextType[4] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal | (int)swCommandTabButtonFlyoutStyle_e.swCommandTabButton_ActionFlyout;
+
+
+                    cmdIDs[5] = cmdGroup.ToolbarId;
+
+                    TextType[5] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal | (int)swCommandTabButtonFlyoutStyle_e.swCommandTabButton_ActionFlyout;
 
                     
 
@@ -478,6 +486,8 @@ namespace Solidworksaddin
         /// </summary>
         public void PrintactiveSheet()
         {
+          //  MessageBox.Show("Active Sheet");
+
             DrawingDoc swDrawing = null;
             PageSetup setup = null;
             ModelDoc2 model = null;
@@ -666,6 +676,149 @@ namespace Solidworksaddin
        
         }
 
+
+        /// <summary>
+        /// Check for Interferences
+        /// </summary>
+        public void CheckInterference()
+        {
+            AssemblyDoc swAssemblyDoc = null;
+            
+            ModelDoc2 model = null;
+            
+            bool boolstatus = false;
+
+           
+            bool Toplevelonly = false;
+
+            InterferenceDetectionMgr pIntMgr = default(InterferenceDetectionMgr);
+
+            object[] vInts = null;
+
+            long i = 0;
+
+            long j = 0;
+
+            IInterference interference = default(IInterference);
+
+            object vIntComps = null;
+
+            object[] vComps = null;
+
+            Component2 comp = default(Component2);
+
+            double vol = 0;
+
+            object vTrans = null;
+
+            bool ret = false;
+
+            model = iSwApp.ActiveDoc;
+           
+
+
+
+            
+
+
+
+            if (model.GetType() == (int)swDocumentTypes_e.swDocASSEMBLY)
+            {
+                swAssemblyDoc = (AssemblyDoc)model;
+               /* //swAssembly = (AssemblyDoc)model;
+
+               // var Assemblycomp = swAssemblyDoc.GetComponents(Toplevelonly);
+              //  NumComponents = swAssemblyDoc.GetComponentCount(Toplevelonly);
+                MessageBox.Show(NumComponents.ToString());
+             //   swAssemblyDoc.ToolsCheckInterference();
+               // swAssemblyDoc.ToolsCheckInterference2(NumComponents, Assemblycomp, CoincidentInterference, out PComp, out PFace);
+                MessageBox.Show(PComp.ToString());
+               // boolstatus = model.Extension.SelectByID2("toolbox-tutorial.SLDASM", "COMPONENT", 0, 0, 0, true, 0, null, 0);
+              //  model.ClearSelection2(true);
+
+                */
+                pIntMgr = swAssemblyDoc.InterferenceDetectionManager;
+
+
+
+                // Specify the interference detection settings and options
+
+                pIntMgr.TreatCoincidenceAsInterference = false;
+
+                pIntMgr.TreatSubAssembliesAsComponents = true;
+
+                pIntMgr.IncludeMultibodyPartInterferences = true;
+
+                pIntMgr.MakeInterferingPartsTransparent = false;
+
+                pIntMgr.CreateFastenersFolder = true;
+
+                pIntMgr.IgnoreHiddenBodies = true;
+
+                pIntMgr.ShowIgnoredInterferences = false;
+
+                pIntMgr.UseTransform = true;
+
+
+
+                // Specify how to display non-interfering components
+
+                pIntMgr.NonInterferingComponentDisplay = (int)swNonInterferingComponentDisplay_e.swNonInterferingComponentDisplay_Wireframe;
+
+
+
+                // Run interference detection
+
+                vInts = (object[])pIntMgr.GetInterferences();
+
+                Debug.Print("# of interferences: " + pIntMgr.GetInterferenceCount());
+
+
+
+                // Get interfering components and transforms
+
+                ret = pIntMgr.GetComponentsAndTransforms(out vIntComps, out vTrans);
+
+                // Get interference information
+
+                for (i = 0; i <= vInts.GetUpperBound(0); i++)
+                {
+
+
+                    Debug.Print("Interference " + (i + 1));
+
+                    interference = (IInterference)vInts[i];
+
+                    Debug.Print("Number of components in this interference: " + interference.GetComponentCount());
+
+                    vComps = (object[])interference.Components;
+
+                    for (j = 0; j <= vComps.GetUpperBound(0); j++)
+                    {
+
+
+                        comp = (Component2)vComps[j];
+
+                        Debug.Print(" " + comp.Name2);
+
+                    }
+
+                    vol = interference.Volume;
+
+                    Debug.Print("Interference volume is " + (vol * 1000000000) + " mm^3");
+
+                }
+
+                // Stop interference detection
+
+                pIntMgr.Done();
+            }
+        }
+
+        public void Test_Function()
+        {
+            CheckInterference();
+        }
         public void ShowPMP()
         {
             if (ppage != null)
