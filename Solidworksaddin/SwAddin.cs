@@ -844,11 +844,10 @@ namespace Solidworksaddin
                 swBOMAnnotation = (BomTableAnnotation)swModelDocExt.InsertBomTable3(Bom_template, 0, 0, BomType, Configuration, false, nbrType, true);
                 swBOMFeature = (BomFeature)swBOMAnnotation.BomFeature;
                 ProcessBomFeature(swModel, swBOMFeature);
-               
+                
                 // Print the name of the configuration used for the BOM table
                 Debug.Print("Name of configuration used for BOM table: " + swBOMFeature.Configuration);
-
-
+                
             }
 
 
@@ -904,6 +903,7 @@ namespace Solidworksaddin
                             }
                         }
                     }
+                    
                 }
             }
             catch (Exception ex)
@@ -923,28 +923,40 @@ namespace Solidworksaddin
             object vConfig = null;
             string ConfigName = null;
             TableAnnotation swTable = default(TableAnnotation);
+            Annotation swAnnotation = default(Annotation);
             object visibility = null;
 
             try
             {
-            swFeat = swBomFeat.GetFeature();
-            vTableArr = (object[])swBomFeat.GetTableAnnotations();
+                swFeat = swBomFeat.GetFeature();
+                vTableArr = (object[])swBomFeat.GetTableAnnotations();
 
-            foreach (TableAnnotation vTable_loopVariable in vTableArr)
-            {
-                vTable = vTable_loopVariable;
-                swTable = (TableAnnotation)vTable;
-                vConfigArray = (string[])swBomFeat.GetConfigurations(true, ref visibility);
-                foreach (object vConfig_loopVariable in vConfigArray)
+                foreach (TableAnnotation vTable_loopVariable in vTableArr)
                 {
-                    vConfig = vConfig_loopVariable;
-                    ConfigName = (string)vConfig;
-                    Debug.Print("-------------------------------------------------------");
-                    Debug.Print(" Component for Configuration : " + ConfigName);
-                    ProcessTableAnn(swModel, swTable, ConfigName);
+                    vTable = vTable_loopVariable;
+                    swTable = (TableAnnotation)vTable;
+                    vConfigArray = (string[])swBomFeat.GetConfigurations(true, ref visibility);
+                    foreach (object vConfig_loopVariable in vConfigArray)
+                    {
+                        vConfig = vConfig_loopVariable;
+                        ConfigName = (string)vConfig;
+                        Debug.Print("-------------------------------------------------------");
+                        Debug.Print(" Component for Configuration : " + ConfigName);
+                        ProcessTableAnn(swModel, swTable, ConfigName);
+                    }
+
+
+
+                    swTable.SaveAsText(@"C:\Users\alex\Desktop\test.xls", "\t");
+                    swAnnotation = swTable.GetAnnotation();
+                    swAnnotation.Select3(false, null);
+                    swModel.EditDelete();
+
+                   // swTable.SaveAsPDF(@"C:\Users\alex\Desktop\test.pdf");
+
+
                 }
             }
-             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
