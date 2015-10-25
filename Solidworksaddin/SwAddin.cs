@@ -815,9 +815,182 @@ namespace Solidworksaddin
             }
         }
 
+        public void BOM_Assembly()
+        {
+
+            ModelDoc2 swModel = default(ModelDoc2);
+            ModelDocExtension swModelDocExt = default(ModelDocExtension);
+            BomTableAnnotation swBOMAnnotation = default(BomTableAnnotation);
+            TableAnnotation swTableAnnotation = default(TableAnnotation);
+            BomFeature swBOMFeature = default(BomFeature);
+
+            string Bom_template = "C:\\Program Files\\SOLIDWORKS Corp\\SOLIDWORKS\\lang\\german\\bom-standard.sldbomtbt";
+            string Configuration = null;
+            swModel = iSwApp.ActiveDoc;
+            swModelDocExt = (ModelDocExtension)swModel.Extension;
+            Note swNote = default(Note);
+            bool boolstatus = false;
+            int BomType = 0;
+            int nbrType = 0;
+            int nErrors = 0;
+            int nWarnings = 0;
+
+            if (swModel.GetType() == (int)swDocumentTypes_e.swDocASSEMBLY)
+            {
+                BomType = (int)swBomType_e.swBomType_Indented;
+                Configuration = "Default";
+                nbrType = (int)swNumberingType_e.swNumberingType_Detailed;
+
+                swBOMAnnotation = (BomTableAnnotation)swModelDocExt.InsertBomTable3(Bom_template, 0, 0, BomType, Configuration, false, nbrType, true);
+                swBOMFeature = (BomFeature)swBOMAnnotation.BomFeature;
+                ProcessBomFeature(swModel, swBOMFeature);
+               
+                // Print the name of the configuration used for the BOM table
+                Debug.Print("Name of configuration used for BOM table: " + swBOMFeature.Configuration);
+
+
+            }
+
+
+         //   swBOMTable = ((BomTableAnnotation)(swDoc.Extension.InsertBomTable(Bom_template, 237, 27, ((int)( swBomType_e.swBomType_TopLevelOnly)), "")));
+        
+        }
+
+        
+
+        public void ProcessTableAnn(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
+        {
+            try
+            {
+                int nNumRow = 0;
+                int J = 0;
+                int I = 0;
+                string ItemNumber = null;
+                string PartNumber = null;
+
+                Debug.Print("   Table Title        " + swTableAnn.Title);
+
+                nNumRow = swTableAnn.RowCount;
+
+                BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
+                swBOMTableAnn = (BomTableAnnotation)swTableAnn;
+
+                for (J = 0; J <= nNumRow - 1; J++)
+                {
+                    Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
+                    Debug.Print("       Item Number  : " + ItemNumber);
+                    Debug.Print("       Part Number  : " + PartNumber);
+
+                    object[] vPtArr = null;
+                    Component2 swComp = null;
+                    object pt = null;
+
+                    vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
+
+                    if (((vPtArr != null)))
+                    {
+                        for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
+                        {
+                            pt = vPtArr[I];
+                            swComp = (Component2)pt;
+                            if ((swComp != null))
+                            {
+                                Debug.Print("           Component Name :" + swComp.Name2 + "      Configuration Name : " + swComp.ReferencedConfiguration);
+                                Debug.Print("           Component Path :" + swComp.GetPathName());
+                            }
+                            else
+                            {
+                                Debug.Print("  Could not get component.");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+
+
+        public void ProcessBomFeature(ModelDoc2 swModel, BomFeature swBomFeat)
+        {
+            Feature swFeat = default(Feature);
+            object[] vTableArr = null;
+            object vTable = null;
+            string[] vConfigArray = null;
+            object vConfig = null;
+            string ConfigName = null;
+            TableAnnotation swTable = default(TableAnnotation);
+            object visibility = null;
+
+            try
+            {
+            swFeat = swBomFeat.GetFeature();
+            vTableArr = (object[])swBomFeat.GetTableAnnotations();
+
+            foreach (TableAnnotation vTable_loopVariable in vTableArr)
+            {
+                vTable = vTable_loopVariable;
+                swTable = (TableAnnotation)vTable;
+                vConfigArray = (string[])swBomFeat.GetConfigurations(true, ref visibility);
+                foreach (object vConfig_loopVariable in vConfigArray)
+                {
+                    vConfig = vConfig_loopVariable;
+                    ConfigName = (string)vConfig;
+                    Debug.Print("-------------------------------------------------------");
+                    Debug.Print(" Component for Configuration : " + ConfigName);
+                    ProcessTableAnn(swModel, swTable, ConfigName);
+                }
+            }
+             }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+
+        }
+
+        public void BOM()
+        {
+            ModelDoc2 swModel = default(ModelDoc2);
+            DrawingDoc swDraw = default(DrawingDoc);
+            Feature swFeat = default(Feature);
+            BomFeature swBomFeat = default(BomFeature);
+
+            try
+            {
+            swModel = (ModelDoc2)iSwApp.ActiveDoc;
+            swDraw = (DrawingDoc)swModel;
+            swFeat = (Feature)swModel.FirstFeature();
+
+            Debug.Print("******************************");
+
+            while ((swFeat != null))
+            {
+                if ("BomFeat" == swFeat.GetTypeName())
+                {
+                    Debug.Print("******************************");
+                    Debug.Print("Feature Name : " + swFeat.Name);
+
+                    swBomFeat = (BomFeature)swFeat.GetSpecificFeature2();
+
+                    ProcessBomFeature(swModel, swBomFeat);
+                }
+                swFeat = (Feature)swFeat.GetNextFeature();
+            }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+        
         public void Test_Function()
         {
-            CheckInterference();
+            //CheckInterference();
+            BOM_Assembly();
         }
         public void ShowPMP()
         {
