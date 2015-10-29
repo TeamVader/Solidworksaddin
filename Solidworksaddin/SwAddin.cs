@@ -873,6 +873,7 @@ namespace Solidworksaddin
 
                 BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
                 swBOMTableAnn = (BomTableAnnotation)swTableAnn;
+                
 
                 for (J = 0; J <= nNumRow - 1; J++)
                 {
@@ -936,6 +937,9 @@ namespace Solidworksaddin
                     vTable = vTable_loopVariable;
                     swTable = (TableAnnotation)vTable;
                     vConfigArray = (string[])swBomFeat.GetConfigurations(true, ref visibility);
+
+                    swTable.InsertColumn2((int)swTableItemInsertPosition_e.swTableItemInsertPosition_Last, 0, "Lagerort", (int)swInsertTableColumnWidthStyle_e.swInsertColumn_DefaultWidth);
+                    swTable.SetColumnTitle(3, "Menge");
                     foreach (object vConfig_loopVariable in vConfigArray)
                     {
                         vConfig = vConfig_loopVariable;
