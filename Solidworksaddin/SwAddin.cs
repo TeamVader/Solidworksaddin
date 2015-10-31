@@ -927,7 +927,7 @@ namespace Solidworksaddin
                 swModel.ClearSelection2(true);
 
                 swBOMFeature = (BomFeature)swBOMAnnotation.BomFeature;
-                swBOMFeature.PartConfigurationGrouping = 2; //Display as on Item
+                swBOMFeature.PartConfigurationGrouping = 3; //Display as on Item 2
               
                 ProcessBomFeature(swModel, swBOMFeature);
                 
@@ -1022,6 +1022,87 @@ namespace Solidworksaddin
         }
 
 
+        /// <summary>
+        /// Return Configurations
+        /// </summary>
+        /// <param name="swModel"></param>
+        /// <param name="swTableAnn"></param>
+        /// <param name="ConfigName"></param>
+        /// <returns></returns>
+        public Dictionary<int, string> Return_Configuration(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
+        {
+            try
+            {
+                int nNumRow = 0;
+                int J = 0;
+                int I = 0;
+
+                Dictionary<int, string> names = new Dictionary<int, string>();
+                string ItemNumber = null;
+                string PartNumber = null;
+
+                // Debug.Print("   Table Title        " + swTableAnn.Title);
+
+                nNumRow = swTableAnn.RowCount;
+
+                BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
+                swBOMTableAnn = (BomTableAnnotation)swTableAnn;
+
+
+                for (J = 0; J <= nNumRow - 1; J++)
+                {
+                    // Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
+                    //  Debug.Print("       Item Number  : " + ItemNumber);
+                    // Debug.Print("       Part Number  : " + PartNumber);
+
+                    object[] vPtArr = null;
+                    Component2 swComp = null;
+                    object pt = null;
+                    swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber);
+
+                    vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
+
+                    if (((vPtArr != null)))
+                    {
+                        for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
+                        {
+                            pt = vPtArr[I];
+                            swComp = (Component2)pt;
+                            if ((swComp != null))
+                            {
+
+                                names.Add(Int32.Parse(ItemNumber), swComp.ReferencedConfiguration);
+                                break;
+
+                                //  Debug.Print("           Component Name :" + swComp.Name2 + "      Configuration Name : " + swComp.ReferencedConfiguration);
+                                //  Debug.Print("           Component Path :" + swComp.GetPathName());
+                            }
+                            else
+                            {
+                                Debug.Print("  Could not get component.");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ;
+                    }
+
+                }
+                if (names != null)
+                {
+                    return names;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return null;
+            }
+        }
+
+
         public void ProcessTableAnn(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
         {
             try
@@ -1088,7 +1169,9 @@ namespace Solidworksaddin
             string[] vConfigArray = null;
             object vConfig = null;
             string ConfigName = null;
+            string partconfig = null;
             Dictionary<int, string> names = new Dictionary<int, string>();
+            Dictionary<int, string> configurations = new Dictionary<int, string>();
             TableAnnotation swTable = default(TableAnnotation);
             Annotation swAnnotation = default(Annotation);
             object visibility = null;
@@ -1104,8 +1187,8 @@ namespace Solidworksaddin
                     swTable = (TableAnnotation)vTable;
                     vConfigArray = (string[])swBomFeat.GetConfigurations(true, ref visibility);
 
-                    swTable.InsertColumn2((int)swTableItemInsertPosition_e.swTableItemInsertPosition_Last, 0, "Lagerort", (int)swInsertTableColumnWidthStyle_e.swInsertColumn_DefaultWidth);
-                    swTable.set_Text(1, (int)swTableItemInsertPosition_e.swTableItemInsertPosition_Last, "bubu");
+                    swTable.InsertColumn2((int)swTableItemInsertPosition_e.swTableItemInsertPosition_Last, 0, "Storage Location", (int)swInsertTableColumnWidthStyle_e.swInsertColumn_DefaultWidth);
+                  //  swTable.set_Text(1, (int)swTableItemInsertPosition_e.swTableItemInsertPosition_Last, "bubu");
                     swTable.SetColumnTitle(3, "Menge");
                     foreach (object vConfig_loopVariable in vConfigArray)
                     {
@@ -1115,11 +1198,18 @@ namespace Solidworksaddin
                         Debug.Print(" Component for Configuration : " + ConfigName);
                         ProcessTableAnn(swModel, swTable, ConfigName);
                         names = Return_Partnames(swModel, swTable, ConfigName);
+                        configurations = Return_Configuration(swModel, swTable, ConfigName);
                     }
 
                     foreach (var data in names)
                     {
                         Debug.Print("Item number : {0} Partname : {1}", data.Key, data.Value);
+                    }
+
+                    for (int j = 1; j <= swTable.RowCount; j++)
+                    { 
+                        configurations.TryGetValue(j,out partconfig);
+                        swTable.set_Text(j, (int)swTableItemInsertPosition_e.swTableItemInsertPosition_Last-2,partconfig);
                     }
 
                     swTable.SaveAsText(@"C:\Users\alex\Desktop\test.xls", "\t");
