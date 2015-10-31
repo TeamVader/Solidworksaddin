@@ -17,6 +17,7 @@ using SolidWorksTools.File;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using Microsoft.Office.Interop.Excel;
 
 
 
@@ -489,7 +490,7 @@ namespace Solidworksaddin
           //  MessageBox.Show("Active Sheet");
 
             DrawingDoc swDrawing = null;
-            PageSetup setup = null;
+            SolidWorks.Interop.sldworks.PageSetup setup = null;
             ModelDoc2 model = null;
             Sheet sheet = null;
             int longstatus = 0;
@@ -541,7 +542,7 @@ namespace Solidworksaddin
         public void PrintActiveDocument()
         {
             DrawingDoc swDrawing = null;
-            PageSetup setup = null;
+            SolidWorks.Interop.sldworks.PageSetup setup = null;
             ModelDoc2 model = null;
 
             model = iSwApp.ActiveDoc;
@@ -557,7 +558,7 @@ namespace Solidworksaddin
         public void PrintSheets(string filename,bool Closefiles)
         {
             DrawingDoc swDrawing = null;
-            PageSetup setup = null;
+            SolidWorks.Interop.sldworks.PageSetup setup = null;
             ModelDoc2 model = null;
             string title = "";
            // PrintSpecification printspec = null;
@@ -815,6 +816,87 @@ namespace Solidworksaddin
             }
         }
 
+        public void Excel_Search(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
+        {
+
+            Microsoft.Office.Interop.Excel.Application excel_app = new Microsoft.Office.Interop.Excel.Application();
+
+            // Make Excel visible (optional).
+            excel_app.Visible = false;
+
+            // Open the workbook read-only.
+            Microsoft.Office.Interop.Excel.Workbook workbook = excel_app.Workbooks.Open(
+                @"C:\Users\alex\Desktop\Stock.xlsx",
+                Type.Missing, true, Type.Missing, Type.Missing,
+                Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                Type.Missing, Type.Missing);
+
+            // Get the first worksheet.
+            Microsoft.Office.Interop.Excel.Worksheet sheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets["Stock"];
+
+            // Get the titles and values.
+            try
+            {
+                int nNumRow = 0;
+                int J = 0;
+                int I = 0;
+                string ItemNumber = null;
+                string PartNumber = null;
+
+                Debug.Print("   Table Title        " + swTableAnn.Title);
+
+                nNumRow = swTableAnn.RowCount;
+
+                BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
+                swBOMTableAnn = (BomTableAnnotation)swTableAnn;
+
+
+                for (J = 0; J <= nNumRow - 1; J++)
+                {
+                    Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
+                    Debug.Print("       Item Number  : " + ItemNumber);
+                    Debug.Print("       Part Number  : " + PartNumber);
+
+                    object[] vPtArr = null;
+                    Component2 swComp = null;
+                    object pt = null;
+
+                    vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
+
+                    if (((vPtArr != null)))
+                    {
+                        for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
+                        {
+                            pt = vPtArr[I];
+                            swComp = (Component2)pt;
+                            if ((swComp != null))
+                            {
+                                Debug.Print("           Component Name :" + swComp.Name2 + "      Configuration Name : " + swComp.ReferencedConfiguration);
+                                Debug.Print("           Component Path :" + swComp.GetPathName());
+                            }
+                            else
+                            {
+                                Debug.Print("  Could not get component.");
+                            }
+                        }
+                    }
+
+                }
+
+                // Close the workbook without saving changes.
+                workbook.Close(false, Type.Missing, Type.Missing);
+
+                // Close the Excel server.
+                excel_app.Quit();
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
         public void BOM_Assembly()
         {
 
@@ -841,8 +923,12 @@ namespace Solidworksaddin
                 Configuration = "Default";
                 nbrType = (int)swNumberingType_e.swNumberingType_Detailed;
 
-                swBOMAnnotation = (BomTableAnnotation)swModelDocExt.InsertBomTable3(Bom_template, 0, 0, BomType, Configuration, false, nbrType, true);
+                swBOMAnnotation = (BomTableAnnotation)swModelDocExt.InsertBomTable3(Bom_template, 0, 0, BomType, Configuration,false, nbrType, true);
+                swModel.ClearSelection2(true);
+
                 swBOMFeature = (BomFeature)swBOMAnnotation.BomFeature;
+                swBOMFeature.PartConfigurationGrouping = 2; //Display as on Item
+              
                 ProcessBomFeature(swModel, swBOMFeature);
                 
                 // Print the name of the configuration used for the BOM table
@@ -855,7 +941,86 @@ namespace Solidworksaddin
         
         }
 
-        
+        /// <summary>
+        /// Returns Partnames to check against stock database
+        /// </summary>
+        /// <param name="swModel"></param>
+        /// <param name="swTableAnn"></param>
+        /// <param name="ConfigName"></param>
+        /// <returns></returns>
+        public Dictionary<int,string> Return_Partnames(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
+        {
+            try
+            {
+                int nNumRow = 0;
+                int J = 0;
+                int I = 0;
+                
+                Dictionary<int, string> names = new  Dictionary<int, string>();
+                string ItemNumber = null;
+                string PartNumber = null;
+
+               // Debug.Print("   Table Title        " + swTableAnn.Title);
+
+                nNumRow = swTableAnn.RowCount;
+
+                BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
+                swBOMTableAnn = (BomTableAnnotation)swTableAnn;
+
+
+                for (J = 0; J <= nNumRow - 1; J++)
+                {
+                   // Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
+                  //  Debug.Print("       Item Number  : " + ItemNumber);
+                   // Debug.Print("       Part Number  : " + PartNumber);
+                    
+                    object[] vPtArr = null;
+                    Component2 swComp = null;
+                    object pt = null;
+                    swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber);
+                    
+                    vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
+
+                    if (((vPtArr != null)))
+                    {
+                        for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
+                        {
+                            pt = vPtArr[I];
+                            swComp = (Component2)pt;
+                            if ((swComp != null))
+                            {
+
+                                    names.Add(Int32.Parse(ItemNumber), PartNumber);
+                                    break;
+                               
+                              //  Debug.Print("           Component Name :" + swComp.Name2 + "      Configuration Name : " + swComp.ReferencedConfiguration);
+                              //  Debug.Print("           Component Path :" + swComp.GetPathName());
+                            }
+                            else
+                            {
+                                Debug.Print("  Could not get component.");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ;
+                    }
+
+                }
+                if (names != null)
+                {
+                    return names;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return null;
+            }
+        }
+
 
         public void ProcessTableAnn(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
         {
@@ -923,6 +1088,7 @@ namespace Solidworksaddin
             string[] vConfigArray = null;
             object vConfig = null;
             string ConfigName = null;
+            Dictionary<int, string> names = new Dictionary<int, string>();
             TableAnnotation swTable = default(TableAnnotation);
             Annotation swAnnotation = default(Annotation);
             object visibility = null;
@@ -939,6 +1105,7 @@ namespace Solidworksaddin
                     vConfigArray = (string[])swBomFeat.GetConfigurations(true, ref visibility);
 
                     swTable.InsertColumn2((int)swTableItemInsertPosition_e.swTableItemInsertPosition_Last, 0, "Lagerort", (int)swInsertTableColumnWidthStyle_e.swInsertColumn_DefaultWidth);
+                    swTable.set_Text(1, (int)swTableItemInsertPosition_e.swTableItemInsertPosition_Last, "bubu");
                     swTable.SetColumnTitle(3, "Menge");
                     foreach (object vConfig_loopVariable in vConfigArray)
                     {
@@ -947,9 +1114,13 @@ namespace Solidworksaddin
                         Debug.Print("-------------------------------------------------------");
                         Debug.Print(" Component for Configuration : " + ConfigName);
                         ProcessTableAnn(swModel, swTable, ConfigName);
+                        names = Return_Partnames(swModel, swTable, ConfigName);
                     }
 
-
+                    foreach (var data in names)
+                    {
+                        Debug.Print("Item number : {0} Partname : {1}", data.Key, data.Value);
+                    }
 
                     swTable.SaveAsText(@"C:\Users\alex\Desktop\test.xls", "\t");
                     swAnnotation = swTable.GetAnnotation();
