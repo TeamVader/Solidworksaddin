@@ -903,14 +903,14 @@ namespace Solidworksaddin
         /// </summary>
         /// <param name="Header"></param>
         /// <param name="Data"></param>
-        public void Excel_BOM() //String[] Header, String[,] Data
+        public void Excel_BOM(ModelDoc2 swModel) //String[] Header, String[,] Data
         {
 
             Microsoft.Office.Interop.Excel.Application excel_app = new Microsoft.Office.Interop.Excel.Application();
 
             // Make Excel visible (optional).
             excel_app.Visible = false;
-
+            excel_app.DisplayAlerts = false;
             // Open the workbook read-only.
             Microsoft.Office.Interop.Excel.Workbook workbook = excel_app.Workbooks.Open(
                 @"C:\Users\alex\Desktop\Excel-BOM.xls",
@@ -921,12 +921,18 @@ namespace Solidworksaddin
 
             // Get the first worksheet.
             Microsoft.Office.Interop.Excel.Worksheet sheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets["BOM"];
-
+            String path = swModel.GetPathName();
+            String[] informations = path.Split('\\');
+            for (int i = 0; i < informations.Length; i++)
+            {
+                Debug.Print(informations[i]);
+            }
+            String Project = "95533";
+            String Project_Cell = "C3";
             // Get the titles and values.
             try
             {
-                String Project = "95533";
-                String Project_Cell = "C3";
+                
 
                 if (sheet != null)
                 {
@@ -936,7 +942,7 @@ namespace Solidworksaddin
 
 
 
-                workbook.Save();
+             //   workbook.SaveAs(filename, Microsoft.Office.Interop.Excel.XlFileFormat.xlWorkbookDefault, Type.Missing, Type.Missing, true, false, XlSaveAsAccessMode.xlNoChange, XlSaveConflictResolution.xlLocalSessionChanges, Type.Missing, Type.Missing);
 
                 // Close the workbook without saving changes.
                 workbook.Close(false, Type.Missing, Type.Missing);
@@ -984,7 +990,8 @@ namespace Solidworksaddin
                 swBOMFeature.PartConfigurationGrouping = 3; //Display as on Item 2
               
                 ProcessBomFeature(swModel, swBOMFeature);
-                
+
+                Excel_BOM(swModel);
                 // Print the name of the configuration used for the BOM table
                 Debug.Print("Name of configuration used for BOM table: " + swBOMFeature.Configuration);
                 
@@ -1322,7 +1329,7 @@ namespace Solidworksaddin
         {
             //CheckInterference();
             BOM_Assembly();
-            Excel_BOM();
+            
         }
         public void ShowPMP()
         {
