@@ -897,6 +897,60 @@ namespace Solidworksaddin
             }
         }
 
+
+        /// <summary>
+        /// Write Data in Template
+        /// </summary>
+        /// <param name="Header"></param>
+        /// <param name="Data"></param>
+        public void Excel_BOM() //String[] Header, String[,] Data
+        {
+
+            Microsoft.Office.Interop.Excel.Application excel_app = new Microsoft.Office.Interop.Excel.Application();
+
+            // Make Excel visible (optional).
+            excel_app.Visible = false;
+
+            // Open the workbook read-only.
+            Microsoft.Office.Interop.Excel.Workbook workbook = excel_app.Workbooks.Open(
+                @"C:\Users\alex\Desktop\Excel-BOM.xls",
+                Type.Missing, true, Type.Missing, Type.Missing,
+                Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                Type.Missing, Type.Missing);
+
+            // Get the first worksheet.
+            Microsoft.Office.Interop.Excel.Worksheet sheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets["BOM"];
+
+            // Get the titles and values.
+            try
+            {
+                String Project = "95533";
+                String Project_Cell = "C3";
+
+                if (sheet != null)
+                {
+                   // MessageBox.Show("Buub");
+                    sheet.Cells[3, 3] = Project;
+                }
+
+
+
+                workbook.Save();
+
+                // Close the workbook without saving changes.
+                workbook.Close(false, Type.Missing, Type.Missing);
+
+                // Close the Excel server.
+                excel_app.Quit();
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
         public void BOM_Assembly()
         {
 
@@ -1268,6 +1322,7 @@ namespace Solidworksaddin
         {
             //CheckInterference();
             BOM_Assembly();
+            Excel_BOM();
         }
         public void ShowPMP()
         {
