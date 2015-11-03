@@ -46,7 +46,11 @@ namespace Solidworksaddin
         public const int mainItemID3 = 2;
         public const int mainItemID4 = 3;
         public const int mainItemID5 = 4;
+        public const int mainItemID6 = 5;
         public const int flyoutGroupID = 91;
+
+        public const int excel_template_col_count = 7;
+        public const int excel_template_data_row = 9;
 
         #region Event Handler Variables
         Hashtable openDocs = new Hashtable();
@@ -217,7 +221,7 @@ namespace Solidworksaddin
             if (iBmp == null)
                 iBmp = new BitmapHandler();
             Assembly thisAssembly;
-            int cmdIndex0, cmdIndex1, cmdIndex2, cmdIndex3, cmdIndex4;
+            int cmdIndex0, cmdIndex1, cmdIndex2, cmdIndex3, cmdIndex4, cmdIndex5;
             string Title = "Alex's Solidworks Addin", ToolTip = "Alex's Solidworks Addin";
 
 
@@ -236,7 +240,7 @@ namespace Solidworksaddin
             //get the ID information stored in the registry
             bool getDataResult = iCmdMgr.GetGroupDataFromRegistry(mainCmdGroupID, out registryIDs);
 
-            int[] knownIDs = new int[5] { mainItemID1, mainItemID2,mainItemID3,mainItemID4,mainItemID5 };
+            int[] knownIDs = new int[6] { mainItemID1, mainItemID2,mainItemID3,mainItemID4,mainItemID5, mainItemID6 };
 
             if (getDataResult)
             {
@@ -262,6 +266,7 @@ namespace Solidworksaddin
             cmdIndex3 = cmdGroup.AddCommandItem2("Test", -1, "Test Function", "Test Function", 2, "Test_Function", "", mainItemID4, menuToolbarOption);
 
             cmdIndex4 = cmdGroup.AddCommandItem2("Show PMP", -1, "Display sample property manager", "Show PMP",2, "ShowPMP", "EnablePMP", mainItemID5, menuToolbarOption);
+            cmdIndex5 = cmdGroup.AddCommandItem2("BOM Export", -1, "Export BOM from Assembly", "BOM Export", 2, "BOM_Assembly", "", mainItemID6, menuToolbarOption);
 
             cmdGroup.HasToolbar = true;
             cmdGroup.HasMenu = true;
@@ -290,10 +295,12 @@ namespace Solidworksaddin
 
                 cmdTab = iCmdMgr.GetCommandTab(type, "Alex SolidWorks AddIn");
                 iCmdMgr.RemoveCommandTab(cmdTab);
-
+                */
+                /*
                 cmdTab = iCmdMgr.GetCommandTab(type, Title);
                 iCmdMgr.RemoveCommandTab(cmdTab);
                 */
+
                 cmdTab = iCmdMgr.GetCommandTab(type, Title);
                 
                 if (cmdTab != null & !getDataResult | ignorePrevious)//if tab exists, but we have ignored the registry info (or changed command group ID), re-create the tab.  Otherwise the ids won't matchup and the tab will be blank
@@ -312,8 +319,8 @@ namespace Solidworksaddin
 
                     CommandTabBox cmdBox = cmdTab.AddCommandTabBox();
 
-                    int[] cmdIDs = new int[6];
-                    int[] TextType = new int[6];
+                    int[] cmdIDs = new int[7];
+                    int[] TextType = new int[7];
 
                     cmdIDs[0] = cmdGroup.get_CommandID(cmdIndex0);
 
@@ -335,11 +342,15 @@ namespace Solidworksaddin
 
                     TextType[4] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal;
 
+                    cmdIDs[5] = cmdGroup.get_CommandID(cmdIndex5);
+
+                    TextType[5] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal;
 
 
-                    cmdIDs[5] = cmdGroup.ToolbarId;
 
-                    TextType[5] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal | (int)swCommandTabButtonFlyoutStyle_e.swCommandTabButton_ActionFlyout;
+                    cmdIDs[6] = cmdGroup.ToolbarId;
+
+                    TextType[6] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal | (int)swCommandTabButtonFlyoutStyle_e.swCommandTabButton_ActionFlyout;
 
                     
 
@@ -923,27 +934,31 @@ namespace Solidworksaddin
             Microsoft.Office.Interop.Excel.Worksheet sheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets["BOM"];
             String path = swModel.GetPathName();
             String[] informations = path.Split('\\');
+            String[] name = informations[informations.Length -1].Split('.');
+            String[] excel_path = path.Split('.');
             for (int i = 0; i < informations.Length; i++)
             {
                 Debug.Print(informations[i]);
             }
-            String Project = "95533";
-            String Project_Cell = "C3";
-            // Get the titles and values.
+            
             try
             {
                 
 
                 if (sheet != null)
                 {
-                   // MessageBox.Show("Buub");
-                    sheet.Cells[3, 3] = Project;
+                   
+                    
+                    sheet.Cells[3, 3] = informations[2];
+                    sheet.Cells[4, 3] = name[0];
+                    sheet.Cells[5, 3] = informations[1];
+                    sheet.Cells[6, 3] = DateTime.Now.Date;
                 }
 
 
 
-             //   workbook.SaveAs(filename, Microsoft.Office.Interop.Excel.XlFileFormat.xlWorkbookDefault, Type.Missing, Type.Missing, true, false, XlSaveAsAccessMode.xlNoChange, XlSaveConflictResolution.xlLocalSessionChanges, Type.Missing, Type.Missing);
-
+                workbook.SaveAs(excel_path[0] + "_bom.xls", Microsoft.Office.Interop.Excel.XlFileFormat.xlWorkbookDefault, Type.Missing, Type.Missing, true, false, XlSaveAsAccessMode.xlNoChange, XlSaveConflictResolution.xlLocalSessionChanges, Type.Missing, Type.Missing);
+                workbook.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, excel_path[0] + "_bom.pdf");
                 // Close the workbook without saving changes.
                 workbook.Close(false, Type.Missing, Type.Missing);
 
