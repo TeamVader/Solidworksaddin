@@ -49,8 +49,17 @@ namespace Solidworksaddin
         public const int mainItemID6 = 5;
         public const int flyoutGroupID = 91;
 
+        #region Excel Template Column Constants
         public const int excel_template_col_count = 7;
-        public const int excel_template_data_row = 9;
+        public const int excel_template_item_number = 1;
+        public const int excel_template_part_number = 2;
+        public const int excel_template_description = 3;
+        public const int excel_template_quantity = 4;
+        public const int excel_template_storage_location = 5;
+        public const int excel_template_manufacturer = 6;
+        public const int excel_template_order_number = 7;
+        
+        #endregion
 
         #region Event Handler Variables
         Hashtable openDocs = new Hashtable();
@@ -455,6 +464,10 @@ namespace Solidworksaddin
             }
         }
 
+        #region Print
+        /// <summary>
+        /// Select a folder and print all SLDDRW Files
+        /// </summary>
         public void Print_Files_in_Folder()
         {
              
@@ -672,6 +685,9 @@ namespace Solidworksaddin
             }
         }
 
+        #endregion
+
+
         public class SolidworksFormats
         {
             public const string Part = ".SLDPRT";
@@ -688,6 +704,16 @@ namespace Solidworksaddin
        
         }
 
+        public class BOM_Part_Informations
+        {
+            public string item_number { get; set; }
+            public string part_number { get; set; }
+            public string description { get; set; }
+            public string quantity { get; set; }
+            public string storage_location { get; set; }
+            public string manufacturer { get; set; }
+            public string order_number { get; set; }
+        }
 
         /// <summary>
         /// Check for Interferences
@@ -925,7 +951,7 @@ namespace Solidworksaddin
             // Open the workbook read-only.
             Microsoft.Office.Interop.Excel.Workbook workbook = excel_app.Workbooks.Open(
                 @"C:\Users\alex\Desktop\Excel-BOM.xls",
-                Type.Missing, true, Type.Missing, Type.Missing,
+                Type.Missing, false, Type.Missing, Type.Missing,
                 Type.Missing, Type.Missing, Type.Missing, Type.Missing,
                 Type.Missing, Type.Missing, Type.Missing, Type.Missing,
                 Type.Missing, Type.Missing);
@@ -936,10 +962,10 @@ namespace Solidworksaddin
             String[] informations = path.Split('\\');
             String[] name = informations[informations.Length -1].Split('.');
             String[] excel_path = path.Split('.');
-            for (int i = 0; i < informations.Length; i++)
+            /* for (int i = 0; i < informations.Length; i++)
             {
                 Debug.Print(informations[i]);
-            }
+            }*/
             
             try
             {
@@ -980,7 +1006,8 @@ namespace Solidworksaddin
             BomTableAnnotation swBOMAnnotation = default(BomTableAnnotation);
             TableAnnotation swTableAnnotation = default(TableAnnotation);
             BomFeature swBOMFeature = default(BomFeature);
-
+            List<BOM_Part_Informations> standard_parts = new List<BOM_Part_Informations>();
+            List<BOM_Part_Informations> special_parts = new List<BOM_Part_Informations>();
             string Bom_template = "C:\\Program Files\\SOLIDWORKS Corp\\SOLIDWORKS\\lang\\german\\bom-standard.sldbomtbt";
             string Configuration = null;
             swModel = iSwApp.ActiveDoc;
@@ -1097,6 +1124,99 @@ namespace Solidworksaddin
             }
         }
 
+        /// <summary>
+        /// Returns only Standard Parts which are not located in Project folder
+        /// </summary>
+        /// <param name="swModel"></param>
+        /// <param name="swTableAnn"></param>
+        /// <param name="ConfigName"></param>
+        /// <returns></returns>
+        public Dictionary<int, string> Return_Filtered_Standard_Parts(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
+        {
+            try
+            {
+                int nNumRow = 0;
+                int J = 0;
+                int I = 0;
+
+                Dictionary<int, string> names = new Dictionary<int, string>();
+                String path = swModel.GetPathName();
+                String[] informations = path.Split('\\');
+                String path_to_project = "";
+                for (int i = 0;i<4;i++)
+                {
+                    path_to_project += informations[i] +"\\";
+                }
+                string ItemNumber = null;
+                string PartNumber = null;
+
+                // Debug.Print("   Table Title        " + swTableAnn.Title);
+
+                nNumRow = swTableAnn.RowCount;
+
+                BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
+                swBOMTableAnn = (BomTableAnnotation)swTableAnn;
+
+
+                for (J = 0; J <= nNumRow - 1; J++)
+                {
+                    // Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
+                    //  Debug.Print("       Item Number  : " + ItemNumber);
+                    // Debug.Print("       Part Number  : " + PartNumber);
+
+                    object[] vPtArr = null;
+                    Component2 swComp = null;
+                    object pt = null;
+                    swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber);
+
+                    vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
+
+                    if (((vPtArr != null)))
+                    {
+                        for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
+                        {
+                            pt = vPtArr[I];
+                            swComp = (Component2)pt;
+                            if ((swComp != null))
+                            {
+
+                                if (swComp.GetPathName().Contains(path_to_project))
+                                {
+                                    break;
+                                }
+                                
+                                
+                                    names.Add(Int32.Parse(ItemNumber), PartNumber);
+                                    break;
+                                
+
+                                //  Debug.Print("           Component Name :" + swComp.Name2 + "      Configuration Name : " + swComp.ReferencedConfiguration);
+                                //  Debug.Print("           Component Path :" + swComp.GetPathName());
+                            }
+                            else
+                            {
+                                Debug.Print("  Could not get component.");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ;
+                    }
+
+                }
+                if (names != null)
+                {
+                    return names;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return null;
+            }
+        }
 
         /// <summary>
         /// Return Configurations
@@ -1178,6 +1298,97 @@ namespace Solidworksaddin
             }
         }
 
+        public void Get_Part_Data(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName, List<BOM_Part_Informations> Standard_Parts ,List<BOM_Part_Informations> Special_Parts )
+        {
+            try
+            {
+                int nNumRow = 0;
+                int J = 0;
+                int I = 0;
+                int numStandard_Part = 1;
+                int numSpecial_Part = 1;
+
+                BOM_Part_Informations part_informations;
+                
+                String path = swModel.GetPathName();
+                String[] informations = path.Split('\\');
+                String path_to_project = "";
+                for (int i = 0;i<4;i++)
+                {
+                    path_to_project += informations[i] +"\\";
+                }
+                string ItemNumber = null;
+                string PartNumber = null;
+
+                // Debug.Print("   Table Title        " + swTableAnn.Title);
+
+                nNumRow = swTableAnn.RowCount;
+
+                BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
+                swBOMTableAnn = (BomTableAnnotation)swTableAnn;
+
+
+                for (J = 0; J <= nNumRow - 1; J++)
+                {
+                    // Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
+                    //  Debug.Print("       Item Number  : " + ItemNumber);
+                    // Debug.Print("       Part Number  : " + PartNumber);
+
+                    object[] vPtArr = null;
+                    Component2 swComp = null;
+                    object pt = null;
+                    swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber);
+
+                    vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
+
+                    if (((vPtArr != null)))
+                    {
+                        for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
+                        {
+                            pt = vPtArr[I];
+                            swComp = (Component2)pt;
+                            if ((swComp != null))
+                            {
+                                part_informations = new BOM_Part_Informations();
+
+                                //Special part
+                                if (swComp.GetPathName().Contains(path_to_project))
+                                {
+                                    part_informations.item_number = numSpecial_Part.ToString();
+                                    numSpecial_Part++;
+
+                                    Special_Parts.Add(part_informations);
+                                    break;
+                                }
+
+                                part_informations.item_number = numStandard_Part.ToString();
+                                numStandard_Part++;
+                                Standard_Parts.Add(part_informations);
+                                break;
+
+                                //  Debug.Print("           Component Name :" + swComp.Name2 + "      Configuration Name : " + swComp.ReferencedConfiguration);
+                                //  Debug.Print("           Component Path :" + swComp.GetPathName());
+                            }
+                            else
+                            {
+                                Debug.Print("  Could not get component.");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ;
+                    }
+
+                }
+                
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+               
+            }
+        }
 
         public void ProcessTableAnn(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
         {
@@ -1273,7 +1484,7 @@ namespace Solidworksaddin
                         Debug.Print("-------------------------------------------------------");
                         Debug.Print(" Component for Configuration : " + ConfigName);
                         ProcessTableAnn(swModel, swTable, ConfigName);
-                        names = Return_Partnames(swModel, swTable, ConfigName);
+                        names = Return_Filtered_Standard_Parts(swModel, swTable, ConfigName);
                         configurations = Return_Configuration(swModel, swTable, ConfigName);
                     }
 
@@ -1346,6 +1557,7 @@ namespace Solidworksaddin
             BOM_Assembly();
             
         }
+
         public void ShowPMP()
         {
             if (ppage != null)
