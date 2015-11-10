@@ -877,7 +877,7 @@ namespace Solidworksaddin
                 // Get the first worksheet.
                 Microsoft.Office.Interop.Excel.Worksheet sheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets["Stock"];
 
-                // Get the titles and values.
+                
                 try
                 {
                    
