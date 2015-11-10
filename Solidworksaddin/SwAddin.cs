@@ -874,7 +874,7 @@ namespace Solidworksaddin
                     Type.Missing, Type.Missing, Type.Missing, Type.Missing,
                     Type.Missing, Type.Missing);
 
-                // Get the first worksheet.
+               
                 Microsoft.Office.Interop.Excel.Worksheet sheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets["Stock"];
 
                 
