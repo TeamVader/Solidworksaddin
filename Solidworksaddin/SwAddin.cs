@@ -61,6 +61,15 @@ namespace Solidworksaddin
 
         public const string custom_part_sheetname = "BOM_Custom";
         public const string standard_part_sheetname = "BOM_Standard";
+
+        /// <summary>
+        /// Path Constants
+        /// </summary>
+        public const string path_to_template = @"C:\Program Files\Stark Industries Addin\Excel-BOM.xls";
+        public const string path_to_template_desktop = @"C:\Users\alex\Desktop\Excel-BOM.xls";
+        public const string path_to_database = @"C:\Users\alex\Desktop\Stock.xlsx";
+        public const string path_to_database_desktop = @"C:\Users\alex\Desktop\Stock.xlsx";
+
         #endregion
 
         #region Event Handler Variables
@@ -858,30 +867,41 @@ namespace Solidworksaddin
         public void Excel_Search(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName, List<BOM_Part_Informations> Standard_parts)
         {
 
-            string path_to_database = @"C:\Users\alex\Desktop\Stock.xlsx";
+            string path_to_db = "";
             Microsoft.Office.Interop.Excel.Application excel_app = new Microsoft.Office.Interop.Excel.Application();
+
 
             // Make Excel visible (optional).
             excel_app.Visible = false;
 
+           
             if (File.Exists(path_to_database))
             {
+                path_to_db = path_to_database;
+            }
+            else if (File.Exists(path_to_database_desktop))
+            {
+                path_to_db = path_to_database_desktop;
+            }
+
+            if (File.Exists(path_to_db))
+            {
                 // Open the workbook read-only.
-                Microsoft.Office.Interop.Excel.Workbook workbook = excel_app.Workbooks.Open(
-                    path_to_database,
-                    Type.Missing, true, Type.Missing, Type.Missing,
-                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                    Type.Missing, Type.Missing);
-
                
-                Microsoft.Office.Interop.Excel.Worksheet sheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets["Stock"];
 
-                
+
                 try
                 {
-                   
-                    
+
+                   Microsoft.Office.Interop.Excel.Workbook workbook = excel_app.Workbooks.Open(
+                   path_to_db,
+                   Type.Missing, true, Type.Missing, Type.Missing,
+                   Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                   Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                   Type.Missing, Type.Missing);
+
+
+                    Microsoft.Office.Interop.Excel.Worksheet sheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets["Stock"];
 
                     // Close the workbook without saving changes.
                     workbook.Close(false, Type.Missing, Type.Missing);
@@ -895,6 +915,10 @@ namespace Solidworksaddin
                     MessageBox.Show(ex.Message);
                 }
             }
+            else
+            {
+                MessageBox.Show("No Database found");
+            }
         }
 
 
@@ -906,29 +930,26 @@ namespace Solidworksaddin
         public void Excel_BOM(ModelDoc2 swModel) //String[] Header, String[,] Data
         {
 
-            string path_to_template = @"C:\Users\alex\Desktop\Excel-BOM.xls";
+            string path_to_temp= "";
             Microsoft.Office.Interop.Excel.Application excel_app = new Microsoft.Office.Interop.Excel.Application();
 
             // Make Excel visible (optional).
             excel_app.Visible = false;
             excel_app.DisplayAlerts = false;
-            // Open the workbook read-only.
 
             if (File.Exists(path_to_template))
             {
-                Microsoft.Office.Interop.Excel.Workbook workbook = excel_app.Workbooks.Open(
-                    path_to_template,
-                    Type.Missing, false, Type.Missing, Type.Missing,
-                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                    Type.Missing, Type.Missing);
+                path_to_temp = path_to_template;
+            }
+            else if (File.Exists(path_to_template_desktop))
+            {
+                path_to_temp = path_to_template_desktop;
+            }
+            // Open the workbook read-only.
 
-                // Get the first worksheet.
-                Microsoft.Office.Interop.Excel.Worksheet sheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets[standard_part_sheetname];
-                String path = swModel.GetPathName();
-                String[] informations = path.Split('\\');
-                String[] name = informations[informations.Length - 1].Split('.');
-                String[] excel_path = path.Split('.');
+            if (File.Exists(path_to_temp))
+            {
+              
                 /* for (int i = 0; i < informations.Length; i++)
                 {
                     Debug.Print(informations[i]);
@@ -937,15 +958,39 @@ namespace Solidworksaddin
                 try
                 {
 
+                   Microsoft.Office.Interop.Excel.Workbook workbook = excel_app.Workbooks.Open(
+                   path_to_temp,
+                   Type.Missing, false, Type.Missing, Type.Missing,
+                   Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                   Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                   Type.Missing, Type.Missing);
 
-                    if (sheet != null)
+                    // Get the first worksheet.
+                    Microsoft.Office.Interop.Excel.Worksheet sheet_standard = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets[standard_part_sheetname];
+                    Microsoft.Office.Interop.Excel.Worksheet sheet_custom = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets[custom_part_sheetname];
+                    String path = swModel.GetPathName();
+                    String[] informations = path.Split('\\');
+                    String[] name = informations[informations.Length - 1].Split('.');
+                    String[] excel_path = path.Split('.');
+
+                    if (sheet_custom != null)
                     {
 
 
-                        sheet.Cells[3, 3] = informations[2];
-                        sheet.Cells[4, 3] = name[0];
-                        sheet.Cells[5, 3] = informations[1];
-                        sheet.Cells[6, 3] = DateTime.Now.Date;
+                        sheet_custom.Cells[3, 3] = informations[2];
+                        sheet_custom.Cells[4, 3] = name[0];
+                        sheet_custom.Cells[5, 3] = informations[1];
+                        sheet_custom.Cells[6, 3] = DateTime.Now.Date;
+                    }
+
+                    if (sheet_standard != null)
+                    {
+
+
+                        sheet_standard.Cells[3, 3] = informations[2];
+                        sheet_standard.Cells[4, 3] = name[0];
+                        sheet_standard.Cells[5, 3] = informations[1];
+                        sheet_standard.Cells[6, 3] = DateTime.Now.Date;
                     }
 
 
@@ -963,6 +1008,10 @@ namespace Solidworksaddin
                 {
                     MessageBox.Show(ex.Message);
                 }
+            }
+            else
+            {
+                MessageBox.Show("No Template found");
             }
         }
 

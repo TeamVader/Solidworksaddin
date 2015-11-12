@@ -135,6 +135,8 @@
            <!-- <RegistryValue Root="HKCU" Key="Software\SolidWorks\AddInsStartup\{5d8a1f46-ea8c-4ddb-8581-0a52f24245a0}" Value="1" Type="integer" Action="write" />-->
             
             <File Id ="Solidworksaddin.tlb" Name ="Solidworksaddin.tlb" Source="..\Solidworksaddin\bin\x64\Debug\Solidworksaddin.tlb"></File>
+            <File Id ="Excel_BOM.xls" Name ="Excel-BOM.xls" Source="..\Solidworksaddin\Excel-BOM.xls"></File>
+
 
 
           </Component>
