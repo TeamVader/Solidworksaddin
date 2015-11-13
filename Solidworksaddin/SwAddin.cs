@@ -51,6 +51,8 @@ namespace Solidworksaddin
 
         #region Excel Template Column Constants
         public const int excel_template_col_count = 7;
+        public const int excel_template_start_row = 9;
+
         public const int excel_template_item_number = 1;
         public const int excel_template_part_number = 2;
         public const int excel_template_description = 3;
@@ -927,12 +929,12 @@ namespace Solidworksaddin
         /// </summary>
         /// <param name="Header"></param>
         /// <param name="Data"></param>
-        public void Excel_BOM(ModelDoc2 swModel) //String[] Header, String[,] Data
+        public void Excel_BOM(ModelDoc2 swModel, List<BOM_Part_Informations> Standard_Parts, List<BOM_Part_Informations> Custom_Parts) //String[] Header, String[,] Data
         {
 
             string path_to_temp= "";
             Microsoft.Office.Interop.Excel.Application excel_app = new Microsoft.Office.Interop.Excel.Application();
-
+            Range worksheet_range;
             // Make Excel visible (optional).
             excel_app.Visible = false;
             excel_app.DisplayAlerts = false;
@@ -957,13 +959,14 @@ namespace Solidworksaddin
 
                 try
                 {
+                    Microsoft.Office.Interop.Excel.Workbooks workbooks = excel_app.Workbooks;
 
-                   Microsoft.Office.Interop.Excel.Workbook workbook = excel_app.Workbooks.Open(
-                   path_to_temp,
-                   Type.Missing, false, Type.Missing, Type.Missing,
-                   Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                   Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                   Type.Missing, Type.Missing);
+                    Microsoft.Office.Interop.Excel.Workbook workbook = workbooks.Open(
+                    path_to_temp,
+                    Type.Missing, false, Type.Missing, Type.Missing,
+                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                    Type.Missing, Type.Missing);
 
                     // Get the first worksheet.
                     Microsoft.Office.Interop.Excel.Worksheet sheet_standard = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets[standard_part_sheetname];
@@ -981,6 +984,19 @@ namespace Solidworksaddin
                         sheet_custom.Cells[4, 3] = name[0];
                         sheet_custom.Cells[5, 3] = informations[1];
                         sheet_custom.Cells[6, 3] = DateTime.Now.Date;
+
+                        for (int cus = 0; cus < Custom_Parts.Count; cus++)
+                        {
+                            sheet_custom.Cells[excel_template_start_row + cus, excel_template_item_number] = Custom_Parts[cus].item_number;
+                            sheet_custom.Cells[excel_template_start_row + cus, excel_template_description] = Custom_Parts[cus].description;
+                            sheet_custom.Cells[excel_template_start_row + cus, excel_template_quantity] = Custom_Parts[cus].quantity;
+                            sheet_custom.Cells[excel_template_start_row + cus, excel_template_part_number] = Custom_Parts[cus].part_number;
+                            sheet_custom.Cells[excel_template_start_row + cus, excel_template_order_number] = Custom_Parts[cus].order_number;
+                            sheet_custom.Cells[excel_template_start_row + cus, excel_template_manufacturer] = Custom_Parts[cus].manufacturer;
+                            sheet_custom.Cells[excel_template_start_row + cus, excel_template_storage_location] = Custom_Parts[cus].storage_location;
+                        }
+                        worksheet_range = sheet_custom.get_Range("A" + excel_template_start_row.ToString(), "G" + (excel_template_start_row + Custom_Parts.Count - 1).ToString());
+                        worksheet_range.Borders.Color = System.Drawing.Color.Black.ToArgb();
                     }
 
                     if (sheet_standard != null)
@@ -998,15 +1014,28 @@ namespace Solidworksaddin
                     workbook.SaveAs(excel_path[0] + "_bom.xls", Microsoft.Office.Interop.Excel.XlFileFormat.xlWorkbookDefault, Type.Missing, Type.Missing, true, false, XlSaveAsAccessMode.xlNoChange, XlSaveConflictResolution.xlLocalSessionChanges, Type.Missing, Type.Missing);
                     workbook.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, excel_path[0] + "_bom.pdf");
                     // Close the workbook without saving changes.
-                    workbook.Close(false, Type.Missing, Type.Missing);
-
-                    // Close the Excel server.
+                    
+                    workbook.Close(0);
                     excel_app.Quit();
+                    
+
+                    foreach (Process process in Process.GetProcessesByName("Excel"))
+                    {
+                    process.Kill();
+                    }
+
+
+
+
 
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    
                 }
             }
             else
@@ -1050,9 +1079,10 @@ namespace Solidworksaddin
                     swBOMFeature = (BomFeature)swBOMAnnotation.BomFeature;
                     swBOMFeature.PartConfigurationGrouping = 3; //Display as on Item 2
 
-                    ProcessBomFeature(swModel, swBOMFeature);
-
-                    Excel_BOM(swModel);
+                  //  ProcessBomFeature(swModel, swBOMFeature);
+                    Get_Sorted_Part_Data(swModel, swBOMFeature, standard_parts, custom_parts);
+                    
+                    Excel_BOM(swModel, standard_parts,custom_parts);
                     // Print the name of the configuration used for the BOM table
                     Debug.Print("Name of configuration used for BOM table: " + swBOMFeature.Configuration);
 
@@ -1331,7 +1361,7 @@ namespace Solidworksaddin
         /// <param name="ConfigName"></param>
         /// <param name="Standard_Parts"></param>
         /// <param name="Custom_Parts"></param>
-        public void Get_Sorted_Part_Data(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName, List<BOM_Part_Informations> Standard_Parts ,List<BOM_Part_Informations> Custom_Parts )
+        public void Get_Sorted_Part_Data(ModelDoc2 swModel, BomFeature swBomFeat, List<BOM_Part_Informations> Standard_Parts, List<BOM_Part_Informations> Custom_Parts)
         {
             try
             {
@@ -1344,6 +1374,7 @@ namespace Solidworksaddin
 
                 BOM_Part_Informations part_informations;
                 
+
                 String path = swModel.GetPathName();
                 String[] informations = path.Split('\\');
                 String path_to_project = "";
@@ -1355,75 +1386,116 @@ namespace Solidworksaddin
                 string PartNumber = null;
 
                 // Debug.Print("   Table Title        " + swTableAnn.Title);
+                Feature swFeat = default(Feature);
+                object[] vTableArr = null;
+                object vTable = null;
+                string[] vConfigArray = null;
+                object vConfig = null;
+                string ConfigName = null;
+                string partconfig = null;
+                
+                TableAnnotation swTable = default(TableAnnotation);
+                Annotation swAnnotation = default(Annotation);
+                object visibility = null;
 
-                nNumRow = swTableAnn.RowCount;
+              
+               swFeat = swBomFeat.GetFeature();
+              vTableArr = (object[])swBomFeat.GetTableAnnotations();
 
-                BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
-                swBOMTableAnn = (BomTableAnnotation)swTableAnn;
-
-
-                for (J = 0; J <= nNumRow - 1; J++)
-                {
-                    // Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
-                    //  Debug.Print("       Item Number  : " + ItemNumber);
-                    // Debug.Print("       Part Number  : " + PartNumber);
-
-                    object[] vPtArr = null;
-                    Component2 swComp = null;
-                    object pt = null;
-                    quantity = swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber);
-
-                    vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
-
-                    if (((vPtArr != null)))
+                    foreach (TableAnnotation vTable_loopVariable in vTableArr)
                     {
-                        for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
+                        vTable = vTable_loopVariable;
+                        swTable = (TableAnnotation)vTable;
+                        vConfigArray = (string[])swBomFeat.GetConfigurations(true, ref visibility);
+
+                        foreach (object vConfig_loopVariable in vConfigArray)
                         {
-                            pt = vPtArr[I];
-                            swComp = (Component2)pt;
-                            if ((swComp != null))
+                            vConfig = vConfig_loopVariable;
+                            ConfigName = (string)vConfig;
+
+
+
+
+                          
+
+                            // swTable.SaveAsPDF(@"C:\Users\alex\Desktop\test.pdf");
+
+
+
+
+                            nNumRow = swTable.RowCount;
+
+                            BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
+                            swBOMTableAnn = (BomTableAnnotation)swTable;
+
+
+                            for (J = 0; J <= nNumRow - 1; J++)
                             {
-                                part_informations = new BOM_Part_Informations();
+                                // Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
+                                //  Debug.Print("       Item Number  : " + ItemNumber);
+                                // Debug.Print("       Part Number  : " + PartNumber);
 
-                                part_informations.description = swComp.ReferencedConfiguration;
-                                part_informations.part_number = PartNumber;
-                                part_informations.quantity = quantity.ToString();
-                                //Custom part
-                                if (swComp.GetPathName().Contains(path_to_project))
+                                object[] vPtArr = null;
+                                Component2 swComp = null;
+                                object pt = null;
+                                quantity = swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber);
+
+                                vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
+
+                                if (((vPtArr != null)))
                                 {
-                                   
-                                    part_informations.item_number = numCustom_Part.ToString();
-                                    numCustom_Part++;
+                                    for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
+                                    {
+                                        pt = vPtArr[I];
+                                        swComp = (Component2)pt;
+                                        if ((swComp != null))
+                                        {
+                                            part_informations = new BOM_Part_Informations();
 
-                                    Custom_Parts.Add(part_informations);
-                                    break;
+                                            part_informations.description = swComp.ReferencedConfiguration;
+                                            part_informations.part_number = PartNumber;
+                                            part_informations.quantity = quantity.ToString();
+                                            //Custom part
+                                            if (swComp.GetPathName().Contains(path_to_project))
+                                            {
+
+                                                part_informations.item_number = numCustom_Part.ToString();
+                                                numCustom_Part++;
+
+                                                Custom_Parts.Add(part_informations);
+                                                break;
+                                            }
+
+                                            part_informations.item_number = numStandard_Part.ToString();
+                                            numStandard_Part++;
+                                            Standard_Parts.Add(part_informations);
+                                            break;
+
+                                        }
+                                        else
+                                        {
+                                            Debug.Print("  Could not get component.");
+                                        }
+                                    }
                                 }
 
-                                part_informations.item_number = numStandard_Part.ToString();
-                                numStandard_Part++;
-                                Standard_Parts.Add(part_informations);
-                                break;
-
+                                
                             }
-                            else
-                            {
-                                Debug.Print("  Could not get component.");
-                            }
+                        break;
                         }
-                    }
-                    else
-                    {
-                        ;
-                    }
 
-                }
-                
+                    }
+                    swAnnotation = swTable.GetAnnotation();
+                    swAnnotation.Select3(false, null);
+                    swModel.EditDelete();
             }
+            
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
                
             }
+            
         }
 
         public void ProcessTableAnn(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
