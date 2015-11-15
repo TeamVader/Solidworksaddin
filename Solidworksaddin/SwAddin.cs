@@ -960,7 +960,7 @@ namespace Solidworksaddin
                 try
                 {
                     Microsoft.Office.Interop.Excel.Workbooks workbooks = excel_app.Workbooks;
-
+                     
                     Microsoft.Office.Interop.Excel.Workbook workbook = workbooks.Open(
                     path_to_temp,
                     Type.Missing, false, Type.Missing, Type.Missing,
@@ -969,8 +969,9 @@ namespace Solidworksaddin
                     Type.Missing, Type.Missing);
 
                     // Get the first worksheet.
-                    Microsoft.Office.Interop.Excel.Worksheet sheet_standard = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets[standard_part_sheetname];
-                    Microsoft.Office.Interop.Excel.Worksheet sheet_custom = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets[custom_part_sheetname];
+                    Microsoft.Office.Interop.Excel.Sheets sheets = workbook.Sheets;
+                    Microsoft.Office.Interop.Excel.Worksheet sheet_standard = sheets[standard_part_sheetname];
+                    Microsoft.Office.Interop.Excel.Worksheet sheet_custom = sheets[custom_part_sheetname];
                     String path = swModel.GetPathName();
                     String[] informations = path.Split('\\');
                     String[] name = informations[informations.Length - 1].Split('.');
@@ -995,8 +996,11 @@ namespace Solidworksaddin
                             sheet_custom.Cells[excel_template_start_row + cus, excel_template_manufacturer] = Custom_Parts[cus].manufacturer;
                             sheet_custom.Cells[excel_template_start_row + cus, excel_template_storage_location] = Custom_Parts[cus].storage_location;
                         }
-                        worksheet_range = sheet_custom.get_Range("A" + excel_template_start_row.ToString(), "G" + (excel_template_start_row + Custom_Parts.Count - 1).ToString());
-                        worksheet_range.Borders.Color = System.Drawing.Color.Black.ToArgb();
+                        if (Custom_Parts.Count != 0)
+                        {
+                            worksheet_range = sheet_custom.get_Range("A" + excel_template_start_row.ToString(), "G" + (excel_template_start_row + Custom_Parts.Count - 1).ToString());
+                            worksheet_range.Borders.Color = System.Drawing.Color.Black.ToArgb();
+                        }
                     }
 
                     if (sheet_standard != null)
@@ -1007,6 +1011,22 @@ namespace Solidworksaddin
                         sheet_standard.Cells[4, 3] = name[0];
                         sheet_standard.Cells[5, 3] = informations[1];
                         sheet_standard.Cells[6, 3] = DateTime.Now.Date;
+
+                        for (int sta = 0; sta <Standard_Parts.Count; sta++)
+                        {
+                            sheet_standard.Cells[excel_template_start_row + sta, excel_template_item_number] =Standard_Parts[sta].item_number;
+                            sheet_standard.Cells[excel_template_start_row + sta, excel_template_description] =Standard_Parts[sta].description;
+                            sheet_standard.Cells[excel_template_start_row + sta, excel_template_quantity] =Standard_Parts[sta].quantity;
+                            sheet_standard.Cells[excel_template_start_row + sta, excel_template_part_number] =Standard_Parts[sta].part_number;
+                            sheet_standard.Cells[excel_template_start_row + sta, excel_template_order_number] =Standard_Parts[sta].order_number;
+                            sheet_standard.Cells[excel_template_start_row + sta, excel_template_manufacturer] =Standard_Parts[sta].manufacturer;
+                            sheet_standard.Cells[excel_template_start_row + sta, excel_template_storage_location] =Standard_Parts[sta].storage_location;
+                        }
+                        if (Standard_Parts.Count != 0)
+                        {
+                            worksheet_range = sheet_standard.get_Range("A" + excel_template_start_row.ToString(), "G" + (excel_template_start_row +Standard_Parts.Count - 1).ToString());
+                            worksheet_range.Borders.Color = System.Drawing.Color.Black.ToArgb();
+                        }
                     }
 
 
@@ -1014,16 +1034,23 @@ namespace Solidworksaddin
                     workbook.SaveAs(excel_path[0] + "_bom.xls", Microsoft.Office.Interop.Excel.XlFileFormat.xlWorkbookDefault, Type.Missing, Type.Missing, true, false, XlSaveAsAccessMode.xlNoChange, XlSaveConflictResolution.xlLocalSessionChanges, Type.Missing, Type.Missing);
                     workbook.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, excel_path[0] + "_bom.pdf");
                     // Close the workbook without saving changes.
-                    
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(sheet_custom);
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(sheet_standard);
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(sheets);
                     workbook.Close(0);
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(workbook);
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(workbooks);
                     excel_app.Quit();
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(excel_app);
                     
-
                     foreach (Process process in Process.GetProcessesByName("Excel"))
                     {
-                    process.Kill();
+                        if (!string.IsNullOrEmpty(process.ProcessName) && process.StartTime.AddSeconds(+10) > DateTime.Now)
+                        {
+                            process.Kill();
+                        }
                     }
-
+                    
 
 
 
