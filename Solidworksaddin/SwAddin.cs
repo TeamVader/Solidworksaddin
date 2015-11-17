@@ -69,8 +69,22 @@ namespace Solidworksaddin
         /// </summary>
         public const string path_to_template = @"C:\Program Files\Stark Industries Addin\Excel-BOM.xls";
         public const string path_to_template_desktop = @"C:\Users\alex\Desktop\Excel-BOM.xls";
+       
+
+        #endregion
+
+        #region Excel Database Constants
+
+        public const int db_storage_location = 4;
+        public const int db_description = 5;
+        public const int db_technical_data = 6;
+        public const int db_material = 7;
+        public const int db_article_number = 9;
+        public const int db_distributor = 11;
+
         public const string path_to_database = @"C:\Users\alex\Desktop\Stock.xlsx";
         public const string path_to_database_desktop = @"C:\Users\alex\Desktop\Stock.xlsx";
+
 
         #endregion
 
@@ -866,7 +880,7 @@ namespace Solidworksaddin
             }
         }
 
-        public void Excel_Search(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName, List<BOM_Part_Informations> Standard_parts)
+        public void Excel_Search(List<BOM_Part_Informations> Standard_parts)
         {
 
             string path_to_db = "";
@@ -904,7 +918,24 @@ namespace Solidworksaddin
 
 
                     Microsoft.Office.Interop.Excel.Worksheet sheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets["Stock"];
-
+                    int NumCols = 10;
+                    int start_row = 4;
+                    int end_row = 4000;
+                    string[] Fields = new string[NumCols];
+                    string[,] search_array = new string[4000, NumCols];
+                    Microsoft.Office.Interop.Excel.Range range = sheet.get_Range("A" + start_row.ToString(), "L"+ end_row.ToString());
+                    object[,] values = (object[,])range.Value2;
+                    int NumRow = 1;
+                    while (NumRow < values.GetLength(0))
+                    {
+                        for (int c = 1; c <= NumCols; c++)
+                        {
+                            Fields[c - 1] = Convert.ToString(values[NumRow, c]);
+                            search_array[NumRow-1,c - 1] = Convert.ToString(values[NumRow, c]);
+                        }
+                        NumRow++;
+                    }
+                    MessageBox.Show(search_array[6, 7]);
                     // Close the workbook without saving changes.
                     workbook.Close(false, Type.Missing, Type.Missing);
 
