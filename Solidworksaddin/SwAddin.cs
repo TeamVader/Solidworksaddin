@@ -922,7 +922,10 @@ namespace Solidworksaddin
                     int start_row = 4;
                     int end_row = 4000;
                     string[] Fields = new string[NumCols];
-                    string[,] search_array = new string[4000, NumCols];
+                    string[,] search_array = new string[end_row, NumCols];
+                    string search_value = "";
+                    int index = 0;
+                    //string[] temp_search = new string[10];
                     Microsoft.Office.Interop.Excel.Range range = sheet.get_Range("A" + start_row.ToString(), "L"+ end_row.ToString());
                     object[,] values = (object[,])range.Value2;
                     int NumRow = 1;
@@ -935,7 +938,23 @@ namespace Solidworksaddin
                         }
                         NumRow++;
                     }
-                    MessageBox.Show(search_array[6, 7]);
+
+                    for (int i = 0; i < Standard_parts.Count; i++)
+                    {
+                        for (int j = 0; j < end_row; j++)
+                        {
+                            
+                                if (search_array[j, db_description].Contains(Standard_parts[i].part_number))
+                                {
+                                  //  index = j + start_row;
+                                }
+                            
+                        }
+
+                       
+                    }
+
+                   // MessageBox.Show(search_array[6, 4]);
                     // Close the workbook without saving changes.
                     workbook.Close(false, Type.Missing, Type.Missing);
 
@@ -1139,8 +1158,9 @@ namespace Solidworksaddin
 
                   //  ProcessBomFeature(swModel, swBOMFeature);
                     Get_Sorted_Part_Data(swModel, swBOMFeature, standard_parts, custom_parts);
-                    
+                    Excel_Search(standard_parts);
                     Excel_BOM(swModel, standard_parts,custom_parts);
+                    
                     // Print the name of the configuration used for the BOM table
                     Debug.Print("Name of configuration used for BOM table: " + swBOMFeature.Configuration);
 
@@ -1156,259 +1176,7 @@ namespace Solidworksaddin
         
         }
 
-        /// <summary>
-        /// Returns Partnames to check against stock database
-        /// </summary>
-        /// <param name="swModel"></param>
-        /// <param name="swTableAnn"></param>
-        /// <param name="ConfigName"></param>
-        /// <returns></returns>
-        public Dictionary<int,string> Return_Partnames(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
-        {
-            try
-            {
-                int nNumRow = 0;
-                int J = 0;
-                int I = 0;
-                
-                Dictionary<int, string> names = new  Dictionary<int, string>();
-                string ItemNumber = null;
-                string PartNumber = null;
-
-               // Debug.Print("   Table Title        " + swTableAnn.Title);
-
-                nNumRow = swTableAnn.RowCount;
-
-                BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
-                swBOMTableAnn = (BomTableAnnotation)swTableAnn;
-
-
-                for (J = 0; J <= nNumRow - 1; J++)
-                {
-                   // Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
-                  //  Debug.Print("       Item Number  : " + ItemNumber);
-                   // Debug.Print("       Part Number  : " + PartNumber);
-                    
-                    object[] vPtArr = null;
-                    Component2 swComp = null;
-                    object pt = null;
-                    swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber);
-                    
-                    vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
-
-                    if (((vPtArr != null)))
-                    {
-                        for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
-                        {
-                            pt = vPtArr[I];
-                            swComp = (Component2)pt;
-                            if ((swComp != null))
-                            {
-
-                                    names.Add(Int32.Parse(ItemNumber), PartNumber);
-                                    break;
-                               
-                              //  Debug.Print("           Component Name :" + swComp.Name2 + "      Configuration Name : " + swComp.ReferencedConfiguration);
-                              //  Debug.Print("           Component Path :" + swComp.GetPathName());
-                            }
-                            else
-                            {
-                                Debug.Print("  Could not get component.");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        ;
-                    }
-
-                }
-                if (names != null)
-                {
-                    return names;
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Returns only Standard Parts which are not located in Project folder
-        /// </summary>
-        /// <param name="swModel"></param>
-        /// <param name="swTableAnn"></param>
-        /// <param name="ConfigName"></param>
-        /// <returns></returns>
-        public Dictionary<int, string> Return_Filtered_Standard_Parts(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
-        {
-            try
-            {
-                int nNumRow = 0;
-                int J = 0;
-                int I = 0;
-
-                Dictionary<int, string> names = new Dictionary<int, string>();
-                String path = swModel.GetPathName();
-                String[] informations = path.Split('\\');
-                String path_to_project = "";
-                for (int i = 0;i<4;i++)
-                {
-                    path_to_project += informations[i] +"\\";
-                }
-                string ItemNumber = null;
-                string PartNumber = null;
-
-                // Debug.Print("   Table Title        " + swTableAnn.Title);
-
-                nNumRow = swTableAnn.RowCount;
-
-                BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
-                swBOMTableAnn = (BomTableAnnotation)swTableAnn;
-
-
-                for (J = 0; J <= nNumRow - 1; J++)
-                {
-                    // Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
-                    //  Debug.Print("       Item Number  : " + ItemNumber);
-                    // Debug.Print("       Part Number  : " + PartNumber);
-
-                    object[] vPtArr = null;
-                    Component2 swComp = null;
-                    object pt = null;
-                    swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber);
-
-                    vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
-
-                    if (((vPtArr != null)))
-                    {
-                        for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
-                        {
-                            pt = vPtArr[I];
-                            swComp = (Component2)pt;
-                            if ((swComp != null))
-                            {
-
-                                if (swComp.GetPathName().Contains(path_to_project))
-                                {
-                                    break;
-                                }
-                                
-                                
-                                    names.Add(Int32.Parse(ItemNumber), PartNumber);
-                                    break;
-                                
-
-                                //  Debug.Print("           Component Name :" + swComp.Name2 + "      Configuration Name : " + swComp.ReferencedConfiguration);
-                                //  Debug.Print("           Component Path :" + swComp.GetPathName());
-                            }
-                            else
-                            {
-                                Debug.Print("  Could not get component.");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        ;
-                    }
-
-                }
-                if (names != null)
-                {
-                    return names;
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Return Configurations
-        /// </summary>
-        /// <param name="swModel"></param>
-        /// <param name="swTableAnn"></param>
-        /// <param name="ConfigName"></param>
-        /// <returns></returns>
-        public Dictionary<int, string> Return_Configuration(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
-        {
-            try
-            {
-                int nNumRow = 0;
-                int J = 0;
-                int I = 0;
-
-                Dictionary<int, string> names = new Dictionary<int, string>();
-                string ItemNumber = null;
-                string PartNumber = null;
-
-                // Debug.Print("   Table Title        " + swTableAnn.Title);
-
-                nNumRow = swTableAnn.RowCount;
-
-                BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
-                swBOMTableAnn = (BomTableAnnotation)swTableAnn;
-
-
-                for (J = 0; J <= nNumRow - 1; J++)
-                {
-                    // Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
-                    //  Debug.Print("       Item Number  : " + ItemNumber);
-                    // Debug.Print("       Part Number  : " + PartNumber);
-
-                    object[] vPtArr = null;
-                    Component2 swComp = null;
-                    object pt = null;
-                    swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber);
-
-                    vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
-
-                    if (((vPtArr != null)))
-                    {
-                        for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
-                        {
-                            pt = vPtArr[I];
-                            swComp = (Component2)pt;
-                            if ((swComp != null))
-                            {
-
-                                names.Add(Int32.Parse(ItemNumber), swComp.ReferencedConfiguration);
-                                break;
-
-                                //  Debug.Print("           Component Name :" + swComp.Name2 + "      Configuration Name : " + swComp.ReferencedConfiguration);
-                                //  Debug.Print("           Component Path :" + swComp.GetPathName());
-                            }
-                            else
-                            {
-                                Debug.Print("  Could not get component.");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        ;
-                    }
-
-                }
-                if (names != null)
-                {
-                    return names;
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-                return null;
-            }
-        }
+        
 
 
         /// <summary>
@@ -1931,6 +1699,266 @@ namespace Solidworksaddin
         }
 
         #endregion
+
+
+        ////Obsolete//////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        /// <summary>
+        /// Returns Partnames to check against stock database
+        /// </summary>
+        /// <param name="swModel"></param>
+        /// <param name="swTableAnn"></param>
+        /// <param name="ConfigName"></param>
+        /// <returns></returns>
+        public Dictionary<int, string> Return_Partnames(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
+        {
+            try
+            {
+                int nNumRow = 0;
+                int J = 0;
+                int I = 0;
+
+                Dictionary<int, string> names = new Dictionary<int, string>();
+                string ItemNumber = null;
+                string PartNumber = null;
+
+                // Debug.Print("   Table Title        " + swTableAnn.Title);
+
+                nNumRow = swTableAnn.RowCount;
+
+                BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
+                swBOMTableAnn = (BomTableAnnotation)swTableAnn;
+
+
+                for (J = 0; J <= nNumRow - 1; J++)
+                {
+                    // Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
+                    //  Debug.Print("       Item Number  : " + ItemNumber);
+                    // Debug.Print("       Part Number  : " + PartNumber);
+
+                    object[] vPtArr = null;
+                    Component2 swComp = null;
+                    object pt = null;
+                    swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber);
+
+                    vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
+
+                    if (((vPtArr != null)))
+                    {
+                        for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
+                        {
+                            pt = vPtArr[I];
+                            swComp = (Component2)pt;
+                            if ((swComp != null))
+                            {
+
+                                names.Add(Int32.Parse(ItemNumber), PartNumber);
+                                break;
+
+                                //  Debug.Print("           Component Name :" + swComp.Name2 + "      Configuration Name : " + swComp.ReferencedConfiguration);
+                                //  Debug.Print("           Component Path :" + swComp.GetPathName());
+                            }
+                            else
+                            {
+                                Debug.Print("  Could not get component.");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ;
+                    }
+
+                }
+                if (names != null)
+                {
+                    return names;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Returns only Standard Parts which are not located in Project folder
+        /// </summary>
+        /// <param name="swModel"></param>
+        /// <param name="swTableAnn"></param>
+        /// <param name="ConfigName"></param>
+        /// <returns></returns>
+        public Dictionary<int, string> Return_Filtered_Standard_Parts(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
+        {
+            try
+            {
+                int nNumRow = 0;
+                int J = 0;
+                int I = 0;
+
+                Dictionary<int, string> names = new Dictionary<int, string>();
+                String path = swModel.GetPathName();
+                String[] informations = path.Split('\\');
+                String path_to_project = "";
+                for (int i = 0; i < 4; i++)
+                {
+                    path_to_project += informations[i] + "\\";
+                }
+                string ItemNumber = null;
+                string PartNumber = null;
+
+                // Debug.Print("   Table Title        " + swTableAnn.Title);
+
+                nNumRow = swTableAnn.RowCount;
+
+                BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
+                swBOMTableAnn = (BomTableAnnotation)swTableAnn;
+
+
+                for (J = 0; J <= nNumRow - 1; J++)
+                {
+                    // Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
+                    //  Debug.Print("       Item Number  : " + ItemNumber);
+                    // Debug.Print("       Part Number  : " + PartNumber);
+
+                    object[] vPtArr = null;
+                    Component2 swComp = null;
+                    object pt = null;
+                    swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber);
+
+                    vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
+
+                    if (((vPtArr != null)))
+                    {
+                        for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
+                        {
+                            pt = vPtArr[I];
+                            swComp = (Component2)pt;
+                            if ((swComp != null))
+                            {
+
+                                if (swComp.GetPathName().Contains(path_to_project))
+                                {
+                                    break;
+                                }
+
+
+                                names.Add(Int32.Parse(ItemNumber), PartNumber);
+                                break;
+
+
+                                //  Debug.Print("           Component Name :" + swComp.Name2 + "      Configuration Name : " + swComp.ReferencedConfiguration);
+                                //  Debug.Print("           Component Path :" + swComp.GetPathName());
+                            }
+                            else
+                            {
+                                Debug.Print("  Could not get component.");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ;
+                    }
+
+                }
+                if (names != null)
+                {
+                    return names;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Return Configurations
+        /// </summary>
+        /// <param name="swModel"></param>
+        /// <param name="swTableAnn"></param>
+        /// <param name="ConfigName"></param>
+        /// <returns></returns>
+        public Dictionary<int, string> Return_Configuration(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
+        {
+            try
+            {
+                int nNumRow = 0;
+                int J = 0;
+                int I = 0;
+
+                Dictionary<int, string> names = new Dictionary<int, string>();
+                string ItemNumber = null;
+                string PartNumber = null;
+
+                // Debug.Print("   Table Title        " + swTableAnn.Title);
+
+                nNumRow = swTableAnn.RowCount;
+
+                BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
+                swBOMTableAnn = (BomTableAnnotation)swTableAnn;
+
+
+                for (J = 0; J <= nNumRow - 1; J++)
+                {
+                    // Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
+                    //  Debug.Print("       Item Number  : " + ItemNumber);
+                    // Debug.Print("       Part Number  : " + PartNumber);
+
+                    object[] vPtArr = null;
+                    Component2 swComp = null;
+                    object pt = null;
+                    swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber);
+
+                    vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
+
+                    if (((vPtArr != null)))
+                    {
+                        for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
+                        {
+                            pt = vPtArr[I];
+                            swComp = (Component2)pt;
+                            if ((swComp != null))
+                            {
+
+                                names.Add(Int32.Parse(ItemNumber), swComp.ReferencedConfiguration);
+                                break;
+
+                                //  Debug.Print("           Component Name :" + swComp.Name2 + "      Configuration Name : " + swComp.ReferencedConfiguration);
+                                //  Debug.Print("           Component Path :" + swComp.GetPathName());
+                            }
+                            else
+                            {
+                                Debug.Print("  Could not get component.");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ;
+                    }
+
+                }
+                if (names != null)
+                {
+                    return names;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return null;
+            }
+        }
     }
 
 }
+
+
