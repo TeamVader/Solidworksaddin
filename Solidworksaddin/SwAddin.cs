@@ -740,6 +740,7 @@ namespace Solidworksaddin
             public string storage_location { get; set; }
             public string manufacturer { get; set; }
             public string order_number { get; set; }
+            public bool IsStandard { get; set; }
         }
 
         /// <summary>
@@ -944,8 +945,9 @@ namespace Solidworksaddin
                         for (int j = 0; j < end_row; j++)
                         {
                             
-                                if (search_array[j, db_description].Contains(Standard_parts[i].part_number))
+                                if (search_array[j, db_description].Contains(Standard_parts[i].part_number) || search_array[j, db_technical_data].Contains(Standard_parts[i].description))
                                 {
+
                                   //  index = j + start_row;
                                 }
                             
@@ -1133,7 +1135,7 @@ namespace Solidworksaddin
                 BomFeature swBOMFeature = default(BomFeature);
                 List<BOM_Part_Informations> standard_parts = new List<BOM_Part_Informations>();
                 List<BOM_Part_Informations> custom_parts = new List<BOM_Part_Informations>();
-                string Bom_template = "C:\\Program Files\\SOLIDWORKS Corp\\SOLIDWORKS\\lang\\german\\bom-standard.sldbomtbt";
+                string Bom_template = "C:\\Program Files\\SOLIDWORKS Corp\\SOLIDWORKS\\lang\\german\\bom_ae.sldbomtbt"; //bom-standard.sldbomtbt
                 string Configuration = null;
                 swModel = iSwApp.ActiveDoc;
                 swModelDocExt = (ModelDocExtension)swModel.Extension;
@@ -1197,6 +1199,10 @@ namespace Solidworksaddin
                 int numStandard_Part = 1;
                 int numCustom_Part = 1;
                 int quantity = 0;
+                int index_description = 0;
+                int index_article_number = 0;
+                int index_supplier = 0;
+
 
                 BOM_Part_Informations part_informations;
                 
@@ -1226,7 +1232,7 @@ namespace Solidworksaddin
 
               
                swFeat = swBomFeat.GetFeature();
-              vTableArr = (object[])swBomFeat.GetTableAnnotations();
+               vTableArr = (object[])swBomFeat.GetTableAnnotations();
 
                     foreach (TableAnnotation vTable_loopVariable in vTableArr)
                     {
@@ -1253,54 +1259,131 @@ namespace Solidworksaddin
 
                             BomTableAnnotation swBOMTableAnn = default(BomTableAnnotation);
                             swBOMTableAnn = (BomTableAnnotation)swTable;
-
-
-                            for (J = 0; J <= nNumRow - 1; J++)
+                            //swTable.GetColumnTitle
+                            for(int h = 0; h < swTable.ColumnCount;h++)
                             {
-                                // Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
-                                //  Debug.Print("       Item Number  : " + ItemNumber);
-                                // Debug.Print("       Part Number  : " + PartNumber);
-
-                                object[] vPtArr = null;
-                                Component2 swComp = null;
-                                object pt = null;
-                                quantity = swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber);
-
-                                vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
-
-                                if (((vPtArr != null)))
+                                switch (swTable.GetColumnTitle(h))
                                 {
-                                    for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
+                                    case "Benennung":
+                                        index_description = h;
+                                        break;
+                                    case "Artikelnummer":
+                                        index_article_number = h;
+                                        break;
+                                    case "Lieferant":
+                                        index_supplier = h;
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                            if (index_supplier != 0 || index_supplier != 0 || index_article_number != 0) //Standard BOM Template
+                            {
+
+                                for (int n = 0; n <= nNumRow - 1; n++)
+                                {
+                                    // Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
+                                    //  Debug.Print("       Item Number  : " + ItemNumber);
+                                    // Debug.Print("       Part Number  : " + PartNumber);
+
+                                    object[] vPtArr = null;
+                                    Component2 swComp = null;
+                                    object pt = null;
+                                    quantity = swBOMTableAnn.GetComponentsCount2(n, ConfigName, out ItemNumber, out PartNumber);
+
+                                    vPtArr = (object[])swBOMTableAnn.GetComponents2(n, ConfigName);
+
+                                    if (((vPtArr != null)))
                                     {
-                                        pt = vPtArr[I];
-                                        swComp = (Component2)pt;
-                                        if ((swComp != null))
+                                        for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
                                         {
-                                            part_informations = new BOM_Part_Informations();
-
-                                            part_informations.description = swComp.ReferencedConfiguration;
-                                            part_informations.part_number = PartNumber;
-                                            part_informations.quantity = quantity.ToString();
-                                            //Custom part
-                                            if (swComp.GetPathName().Contains(path_to_project))
+                                            pt = vPtArr[I];
+                                            swComp = (Component2)pt;
+                                            if ((swComp != null))
                                             {
+                                                part_informations = new BOM_Part_Informations();
 
-                                                part_informations.item_number = numCustom_Part.ToString();
-                                                numCustom_Part++;
+                                                part_informations.description = swTable.get_Text(n, index_description);
+                                                part_informations.manufacturer = swTable.get_Text(n, index_supplier);
+                                                part_informations.order_number = swTable.get_Text(n, index_article_number);
 
-                                                Custom_Parts.Add(part_informations);
+                                                part_informations.part_number = PartNumber;
+                                                part_informations.quantity = quantity.ToString();
+                                                //Custom part
+                                                if (swComp.GetPathName().Contains(path_to_project))
+                                                {
+
+                                                    part_informations.item_number = numCustom_Part.ToString();
+                                                    numCustom_Part++;
+
+                                                    Custom_Parts.Add(part_informations);
+                                                    break;
+                                                }
+
+                                                part_informations.item_number = numStandard_Part.ToString();
+                                                numStandard_Part++;
+                                                Standard_Parts.Add(part_informations);
                                                 break;
+
                                             }
-
-                                            part_informations.item_number = numStandard_Part.ToString();
-                                            numStandard_Part++;
-                                            Standard_Parts.Add(part_informations);
-                                            break;
-
+                                            else
+                                            {
+                                                Debug.Print("  Could not get component.");
+                                            }
                                         }
-                                        else
+                                    }
+                                }
+                               
+                            }
+                            else //No Standard BOM Template
+                            {
+                                for (J = 0; J <= nNumRow - 1; J++)
+                                {
+                                    // Debug.Print("   Row Number " + J + " Component Count  : " + swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber));
+                                    //  Debug.Print("       Item Number  : " + ItemNumber);
+                                    // Debug.Print("       Part Number  : " + PartNumber);
+
+                                    object[] vPtArr = null;
+                                    Component2 swComp = null;
+                                    object pt = null;
+                                    quantity = swBOMTableAnn.GetComponentsCount2(J, ConfigName, out ItemNumber, out PartNumber);
+
+                                    vPtArr = (object[])swBOMTableAnn.GetComponents2(J, ConfigName);
+
+                                    if (((vPtArr != null)))
+                                    {
+                                        for (I = 0; I <= vPtArr.GetUpperBound(0); I++)
                                         {
-                                            Debug.Print("  Could not get component.");
+                                            pt = vPtArr[I];
+                                            swComp = (Component2)pt;
+                                            if ((swComp != null))
+                                            {
+                                                part_informations = new BOM_Part_Informations();
+
+                                                part_informations.description = swComp.ReferencedConfiguration;
+                                                part_informations.part_number = PartNumber;
+                                                part_informations.quantity = quantity.ToString();
+                                                //Custom part
+                                                if (swComp.GetPathName().Contains(path_to_project))
+                                                {
+
+                                                    part_informations.item_number = numCustom_Part.ToString();
+                                                    numCustom_Part++;
+
+                                                    Custom_Parts.Add(part_informations);
+                                                    break;
+                                                }
+
+                                                part_informations.item_number = numStandard_Part.ToString();
+                                                numStandard_Part++;
+                                                Standard_Parts.Add(part_informations);
+                                                break;
+
+                                            }
+                                            else
+                                            {
+                                                Debug.Print("  Could not get component.");
+                                            }
                                         }
                                     }
                                 }
