@@ -1152,6 +1152,7 @@ namespace Solidworksaddin
             //string nomatches = "WarningMessage";
             string nomatches = "keine Ergebnisse";
             BOM.Check_if_item_number_exists(searchurl, item_number, nomatches);
+            BOM.Create_XML_Websearch_File();
             
         }
 
