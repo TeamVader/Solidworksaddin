@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace Solidworksaddin
@@ -233,7 +235,7 @@ namespace Solidworksaddin
                                 {
                                     if (string.Compare(Standard_Parts[index].manufacturer, company.manufacturer, true) == 0)
                                     {
-                                        writer.WriteLine(string.Join(delimter, capsulate + pos_nr + capsulate, capsulate + Standard_Parts[index].order_number + capsulate, capsulate + Standard_Parts[index].quantity + capsulate, capsulate + projectnumber + capsulate));
+                                        writer.WriteLine(string.Join(delimter, capsulate + pos_nr + capsulate, capsulate + Standard_Parts[index].order_number + capsulate, capsulate + Standard_Parts[index].quantity + capsulate )); //capsulate + projectnumber + capsulate
                                         pos_nr++;
                                     }
                                 }
@@ -561,6 +563,150 @@ namespace Solidworksaddin
             {
                 MessageBox.Show("No Database found");
             }
+        }
+
+        /// <summary>
+        /// Check if Product Number exists
+        /// </summary>
+        /// <param name="searchurl"></param>
+        /// <param name="item_number"></param>
+        /// <param name="no_matches"></param>
+        public static void Check_if_item_number_exists(string searchurl,string item_number,string no_matches)
+        {
+
+            
+            try
+            {
+
+                
+                WebRequest req = WebRequest.Create(searchurl + item_number);
+                WebResponse res = req.GetResponse();
+                StreamReader sr = new StreamReader(res.GetResponseStream());
+                string returnvalue = sr.ReadToEnd();
+                if (returnvalue.Contains(string.Format(no_matches)))
+                {
+                    MessageBox.Show(string.Format("Teil mit der Nummer {0} der Firma existiert NICHT", item_number));
+                }
+                else
+                {
+                    MessageBox.Show(string.Format("Teil mit der Nummer {0} der Firma existiert", item_number));
+
+                }
+                if (!File.Exists(@"C:\test.txt"))
+                {
+                    File.Create(@"C:\test.txt").Close();
+                }
+                string delimter = ";";
+                string capsulate = "\"";
+
+
+
+
+                using (System.IO.TextWriter writer = File.CreateText(@"C:\test.txt"))
+                {
+
+                    writer.WriteLine(returnvalue);
+
+                }
+                
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+
+
+        public static void Igus_Order()
+        {
+
+            string textbox_id = "ART_NR";
+            string value = "\"" +  "234532" + "\"" ;
+            string button_id = "234532";
+           /* */
+            /*
+            HtmlDocument document = browser.Document;
+            HtmlElement inputValue = document.GetEementById("ctl00_ContentPlaceHolder1_txtNAICS");
+            element.SetAttribute("value", "334511");
+            HtmlElement submitButton = document.GetElementById("ctl00_ContentPlaceHolder1_btnSearch2");
+            submitButton.InvokeMember("click");*/
+            try
+            {
+
+                       string query = "544234";
+                        WebRequest req = WebRequest.Create("https://www.festo.com/net/de_de/SupportPortal/InternetSearch.aspx?q=" + query);
+                        /*string postData = "ART_NR=125265";
+
+                        byte[] send = Encoding.Default.GetBytes(postData);
+                        req.Method = "POST";
+                        req.ContentType = "application/x-www-form-urlencoded";
+                        req.ContentLength = send.Length;
+
+                        Stream sout = req.GetRequestStream();
+                        sout.Write(send, 0, send.Length);
+                        sout.Flush();
+                        sout.Close();
+                */
+                        WebResponse res = req.GetResponse();
+                        StreamReader sr = new StreamReader(res.GetResponseStream());
+                        string returnvalue = sr.ReadToEnd();
+                        if (returnvalue.Contains(string.Format("Ihre Suche nach „{0}“ ergab kein Ergebnis", query)))
+                        {
+                            MessageBox.Show("Teile Nummer der Firma existiert nicht");
+                        }
+                        else
+                        {
+                            MessageBox.Show("Teile Nummer der Firma existiert");
+
+                        }
+                        if (!File.Exists(@"C:\test.txt"))
+                        {
+                            File.Create(@"C:\test.txt").Close();
+                        }
+                        string delimter = ";";
+                        string capsulate = "\"";
+
+
+
+
+                        using (System.IO.TextWriter writer = File.CreateText(@"C:\test.txt"))
+                        {
+
+                            writer.WriteLine(returnvalue);
+                            
+                        }
+                        //MessageBox.Show();
+
+                /*
+                Process.Start("http://www.igus.de/Quickorder");
+                Thread.Sleep(5000);
+                SendKeys.SendWait("%D");
+                Thread.Sleep(100);
+                SendKeys.SendWait(EncodeForSendKey(string.Format(" javascript:function x(){document.getElementById({0}).value={1};} x();", textbox_id, value)));
+                SendKeys.SendWait("{ENTER}");*/
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        public static string EncodeForSendKey(string value)
+        {
+            StringBuilder sb = new StringBuilder(value);
+            sb.Replace("{", "{{}");
+            sb.Replace("}", "{}}");
+            sb.Replace("{{{}}", "{{}");
+            sb.Replace("[", "{[}");
+            sb.Replace("]", "{]}");
+            sb.Replace("(", "{(}");
+            sb.Replace(")", "{)}");
+            sb.Replace("+", "{+}");
+            sb.Replace("^", "{^}");
+            sb.Replace("%", "{%}");
+            sb.Replace("~", "{~}");
+            return sb.ToString();
         }
     
     }

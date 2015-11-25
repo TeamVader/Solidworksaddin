@@ -1142,7 +1142,16 @@ namespace Solidworksaddin
         public void Test_Function()
         {
             //CheckInterference();
-            BOM_Assembly();
+            //BOM_Assembly();
+
+            string item_number = "0450.10.56";
+           // string searchurl = "https://www.festo.com/net/de_de/SupportPortal/InternetSearch.aspx?q=";
+            string searchurl = "http://www.igus.ch/Search?q=";
+
+            
+            //string nomatches = "WarningMessage";
+            string nomatches = "keine Ergebnisse";
+            BOM.Check_if_item_number_exists(searchurl, item_number, nomatches);
             
         }
 
