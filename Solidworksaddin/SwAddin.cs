@@ -50,6 +50,9 @@ namespace Solidworksaddin
         public const int mainItemID6 = 5;
         public const int flyoutGroupID = 91;
 
+        public List<BOM.Websearch> websearch_list = new List<BOM.Websearch>();
+        public const string path_to_websearch_file = @"C:\Users\alex\Desktop\Websearches.xml";
+
         #region Excel Template Column Constants
         public const int excel_template_col_count = 7;
         public const int excel_template_start_row = 9;
@@ -70,7 +73,9 @@ namespace Solidworksaddin
         /// </summary>
         public const string path_to_template = @"C:\Program Files\Stark Industries Addin\Excel-BOM.xls";
         public const string path_to_template_desktop = @"C:\Users\alex\Desktop\Excel-BOM.xls";
-       
+
+
+        
 
         #endregion
 
@@ -1153,7 +1158,7 @@ namespace Solidworksaddin
             string nomatches = "keine Ergebnisse";
             BOM.Check_if_item_number_exists(searchurl, item_number, nomatches);
             BOM.Create_XML_Websearch_File();
-            
+            BOM.Read_XML_Websearch_File(websearch_list);
         }
 
         public void ShowPMP()

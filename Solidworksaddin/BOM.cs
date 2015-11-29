@@ -48,25 +48,25 @@ namespace Solidworksaddin
             public bool IsStandard { get; set; }
         }
 
-        class Employee
+        public class Websearch
         {
-            int _id;
-            string _firstName;
-            string _lastName;
-            int _salary;
+            string _id;
+            string _url;
+            string _nomatchkeyword;
+            
 
-            public Employee(int id, string firstName, string lastName, int salary)
+            public Websearch(string id, string url, string nomatchkeyword)
             {
                 this._id = id;
-                this._firstName = firstName;
-                this._lastName = lastName;
-                this._salary = salary;
+                this._url = url;
+                this._nomatchkeyword = nomatchkeyword;
+                
             }
 
-            public int Id { get { return _id; } }
-            public string FirstName { get { return _firstName; } }
-            public string LastName { get { return _lastName; } }
-            public int Salary { get { return _salary; } }
+            public string Id { get { return _id; } }
+            public string Url { get { return _url; } }
+            public string Nomatchkeyword { get { return _nomatchkeyword; } }
+            
         }
 
 
@@ -589,43 +589,98 @@ namespace Solidworksaddin
         }
 
 
-
+        /// <summary>
+        /// Create a List to search items for the order number by company
+        /// </summary>
         public static void Create_XML_Websearch_File()
         {
 
-            Employee[] employees = new Employee[4];
-            employees[0] = new Employee(1, "David", "Smith", 10000);
-            employees[1] = new Employee(3, "Mark", "Drinkwater", 30000);
-            employees[2] = new Employee(4, "Norah", "Miller", 20000);
-            employees[3] = new Employee(12, "Cecil", "Walker", 120000);
+            List<Websearch> websearchlist = new List<Websearch>();
+            websearchlist.Add(new Websearch("Festo","https://www.festo.com/net/de_de/SupportPortal/InternetSearch.aspx?q={0}","WarningMessage"));
+            websearchlist.Add(new Websearch("Hanser", "http://www.hanser.ch/web/ganter.aspx?cmd=normen&quickfind={0}&LCID=1031&pageID=14##", "0 Treffer"));
+            websearchlist.Add(new Websearch("Igus", "http://www.igus.ch/Search?q={0}", "keine Ergebnisse"));
+            websearchlist.Add(new Websearch("Würth", "https://eshop.wuerth-ag.ch/is-bin/INTERSHOP.enfinity/WFS/3126-B1-Site/de_DE/-/CHF/ViewAfterSearch-ExecuteAfterSearch?ufd-SearchCategory=Gesamtkatalog&SearchCategory=3126&SearchResultType=&EffectiveSearchTerm=&VisibleSearchTerm={0}&x=9&y=6", "Anzahl gefundene Produkte: 0"));
 
-            if (!File.Exists(@"C:\employees.xml"))
+
+
+
+
+            if (!File.Exists(SwAddin.path_to_websearch_file))
             {
 
+                XmlWriterSettings settings = new XmlWriterSettings();
 
-
-                using (XmlWriter writer = XmlWriter.Create(@"C:\employees.xml"))
+               // settings.Encoding = Encoding.GetEncoding("UTF-8");
+                settings.Indent = true;
+                settings.IndentChars = "\t";
+               // settings.Indent = true;
+               // settings.NewLineHandling = NewLineHandling.Replace;
+               // settings.IndentChars = " ";
+               // settings.NewLineOnAttributes = true;
+              //  settings.OmitXmlDeclaration = true;
+                
+                   
+                
+                using (XmlWriter writer = XmlWriter.Create(SwAddin.path_to_websearch_file, settings))//
                 {
                     writer.WriteStartDocument();
-                    writer.WriteStartElement("Employees");
+                    
+                    writer.WriteStartElement("Websearch_By_Company");
 
-                    foreach (Employee employee in employees)
+                    foreach (Websearch websearch in websearchlist)
                     {
-                        writer.WriteStartElement("Employee");
+                        writer.WriteStartElement("Websearch");
 
-                        writer.WriteElementString("ID", employee.Id.ToString());
-                        writer.WriteElementString("FirstName", employee.FirstName);
-                        writer.WriteElementString("LastName", employee.LastName);
-                        writer.WriteElementString("Salary", employee.Salary.ToString());
+                        writer.WriteElementString("ID", websearch.Id);
+                        writer.WriteElementString("URL", websearch.Url);
+                        writer.WriteElementString("NoMatch", websearch.Nomatchkeyword);
+                        
 
                         writer.WriteEndElement();
                     }
 
                     writer.WriteEndElement();
                     writer.WriteEndDocument();
+                    
                 }
             }
         }
+
+
+        /// <summary>
+        /// Read the Websearch file 
+        /// </summary>
+        /// <param name="websearch_list"></param>
+        public static void Read_XML_Websearch_File(List<Websearch> websearch_list)
+        {
+
+            try
+            {
+                if (File.Exists(SwAddin.path_to_websearch_file))
+                {
+
+                    XmlDocument xdoc = new XmlDocument();
+                    xdoc.Load(SwAddin.path_to_websearch_file);
+
+                    foreach (XmlNode websearch in xdoc.SelectNodes("/Websearch_By_Company/*"))
+                    {
+                        if (websearch != null)
+                        {
+                            websearch_list.Add(new Websearch(websearch["ID"].InnerText, websearch["URL"].InnerText, websearch["NoMatch"].InnerText));
+                            Debug.Print(websearch["ID"].InnerText + websearch["URL"].InnerText + websearch["NoMatch"].InnerText);
+                        }
+
+                    }
+
+
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.StackTrace);
+            }
+        }
+
 
         /// <summary>
         /// Check if Product Number exists
@@ -641,7 +696,7 @@ namespace Solidworksaddin
             {
 
                 
-                WebRequest req = WebRequest.Create(searchurl + item_number);
+                WebRequest req = WebRequest.Create(string.Format(searchurl, item_number));
                 WebResponse res = req.GetResponse();
                 StreamReader sr = new StreamReader(res.GetResponseStream());
                 string returnvalue = sr.ReadToEnd();
@@ -651,7 +706,7 @@ namespace Solidworksaddin
                 }
                 else
                 {
-                    MessageBox.Show(string.Format("Teil mit der Nummer {0} der Firma existiert", item_number));
+                  //  MessageBox.Show(string.Format("Teil mit der Nummer {0} der Firma existiert", item_number));
 
                 }
                 if (!File.Exists(@"C:\test.txt"))
