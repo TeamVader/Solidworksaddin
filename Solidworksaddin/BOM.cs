@@ -695,36 +695,41 @@ namespace Solidworksaddin
             try
             {
 
-                
+                string returnvalue = "";
                 WebRequest req = WebRequest.Create(string.Format(searchurl, item_number));
-                WebResponse res = req.GetResponse();
-                StreamReader sr = new StreamReader(res.GetResponseStream());
-                string returnvalue = sr.ReadToEnd();
-                if (returnvalue.Contains(string.Format(no_matches)))
-                {
-                    MessageBox.Show(string.Format("Teil mit der Nummer {0} der Firma existiert NICHT", item_number));
-                }
-                else
-                {
-                  //  MessageBox.Show(string.Format("Teil mit der Nummer {0} der Firma existiert", item_number));
+                
+                   using ( WebResponse res = req.GetResponse())
+                   {
+                    StreamReader sr = new StreamReader(res.GetResponseStream());
 
-                }
-                if (!File.Exists(@"C:\test.txt"))
-                {
-                    File.Create(@"C:\test.txt").Close();
-                }
-                string delimter = ";";
-                string capsulate = "\"";
+                    returnvalue = sr.ReadToEnd();
+                   }
+                    if (returnvalue.Contains(string.Format(no_matches)))
+                    {
+                        MessageBox.Show(string.Format("Teil mit der Nummer {0} der Firma existiert NICHT", item_number));
+                    }
+                    else
+                    {
+                         MessageBox.Show(string.Format("Teil mit der Nummer {0} der Firma existiert", item_number));
+
+                    }
+                    if (!File.Exists(@"C:\test.txt"))
+                    {
+                        File.Create(@"C:\test.txt").Close();
+                    }
+                    string delimter = ";";
+                    string capsulate = "\"";
 
 
 
 
-                using (System.IO.TextWriter writer = File.CreateText(@"C:\test.txt"))
-                {
+                    using (System.IO.TextWriter writer = File.CreateText(@"C:\test.txt"))
+                    {
 
-                    writer.WriteLine(returnvalue);
+                        writer.WriteLine(returnvalue);
 
-                }
+                    }
+                
                 
             }
             catch (Exception ex)
