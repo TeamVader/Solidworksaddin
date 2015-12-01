@@ -1151,7 +1151,7 @@ namespace Solidworksaddin
 
             string item_number = "0450.10.56";
            // string searchurl = "https://www.festo.com/net/de_de/SupportPortal/InternetSearch.aspx?q=";
-            string searchurl = "http://www.igus.ch/Search?q=";
+            string searchurl = "http://www.imkmlgus.ch/Searvhujbujmbjch?q=";
 
             
             //string nomatches = "WarningMessage";

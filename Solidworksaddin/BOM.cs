@@ -681,6 +681,46 @@ namespace Solidworksaddin
             }
         }
 
+        /// <summary>
+        /// Check if URL exists
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        public static bool page_exists(string url)
+        {
+            bool pageExists;
+            try
+            {
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                request.Method = WebRequestMethods.Http.Head;
+
+                request.Timeout = 1000;
+
+                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                {
+                    pageExists = response.StatusCode == HttpStatusCode.OK;
+                 //   MessageBox.Show(response.StatusCode.ToString());
+                    return pageExists;
+                }
+            }
+            catch (WebException ex)
+            {
+                using (WebResponse response = ex.Response)
+                {
+                    HttpWebResponse httpResponse = (HttpWebResponse)response;
+                    Console.WriteLine("Error code: {0}", httpResponse.StatusCode);
+                    using (Stream data = response.GetResponseStream())
+                    using (var reader = new StreamReader(data))
+                    {
+                        string text = reader.ReadToEnd();
+                        MessageBox.Show(text);
+                    }
+                }
+                
+                return false;
+            }
+
+        }
 
         /// <summary>
         /// Check if Product Number exists
@@ -696,21 +736,23 @@ namespace Solidworksaddin
             {
 
                 string returnvalue = "";
-                WebRequest req = WebRequest.Create(string.Format(searchurl, item_number));
-                
-                   using ( WebResponse res = req.GetResponse())
-                   {
-                    StreamReader sr = new StreamReader(res.GetResponseStream());
+                if (page_exists(string.Format(searchurl, item_number)))
+                {
+                    WebRequest req = WebRequest.Create(string.Format(searchurl, item_number));
 
-                    returnvalue = sr.ReadToEnd();
-                   }
+                    using (WebResponse res = req.GetResponse())
+                    {
+                        StreamReader sr = new StreamReader(res.GetResponseStream());
+
+                        returnvalue = sr.ReadToEnd();
+                    }
                     if (returnvalue.Contains(string.Format(no_matches)))
                     {
                         MessageBox.Show(string.Format("Teil mit der Nummer {0} der Firma existiert NICHT", item_number));
                     }
                     else
                     {
-                         MessageBox.Show(string.Format("Teil mit der Nummer {0} der Firma existiert", item_number));
+                        MessageBox.Show(string.Format("Teil mit der Nummer {0} der Firma existiert", item_number));
 
                     }
                     if (!File.Exists(@"C:\test.txt"))
@@ -729,7 +771,11 @@ namespace Solidworksaddin
                         writer.WriteLine(returnvalue);
 
                     }
-                
+                }
+                else
+                {
+                    MessageBox.Show("Url doesnt exist");
+                }
                 
             }
             catch (Exception ex)
