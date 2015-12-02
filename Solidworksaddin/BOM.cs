@@ -691,17 +691,24 @@ namespace Solidworksaddin
             bool pageExists;
             try
             {
+                Uri requesturi;
+                Uri responseuri;
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                 request.Method = WebRequestMethods.Http.Head;
-
                 request.Timeout = 1000;
+                if(request.RequestUri.Scheme == Uri.UriSchemeHttp || request.RequestUri.Scheme == Uri.UriSchemeHttps )
+                {
+                    requesturi = request.RequestUri;
 
                 using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
                 {
-                    pageExists = response.StatusCode == HttpStatusCode.OK;
+                    responseuri = response.ResponseUri;
+                    pageExists = (responseuri == requesturi);
                  //   MessageBox.Show(response.StatusCode.ToString());
                     return pageExists;
                 }
+                }
+                return false;
             }
             catch (WebException ex)
             {
