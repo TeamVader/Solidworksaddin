@@ -50,6 +50,7 @@ namespace Solidworksaddin
         public const int mainItemID6 = 5;
         public const int flyoutGroupID = 91;
 
+        public List<string> companies = new List<string>();
         public List<BOM.Websearch> websearch_list = new List<BOM.Websearch>();
         public const string path_to_websearch_file = @"C:\Users\alex\Desktop\Websearches.xml";
 
@@ -882,12 +883,15 @@ namespace Solidworksaddin
             }
         }
 
-        
 
-
-       
 
         public void BOM_Assembly()
+        {
+            BOM_Assembly_Options(true, true);
+        }
+       
+
+        public void BOM_Assembly_Options(bool create_basket, bool create_bom)
         {
 
             try
@@ -961,8 +965,16 @@ namespace Solidworksaddin
                   //  ProcessBomFeature(swModel, swBOMFeature);
                     BOM.Get_Sorted_Part_Data(swModel, swBOMFeature, standard_parts, custom_parts, project_path);
                //     Excel_Search(standard_parts);
-                    BOM.Excel_BOM(swModel, standard_parts, custom_parts,project_number);
-                    BOM.Create_Project_Basket_by_Company(standard_parts, project_path, project_number);
+                    BOM.Get_Companies(standard_parts, companies);
+
+                    if (create_bom)
+                    {
+                        BOM.Excel_BOM(swModel, standard_parts, custom_parts, project_number);
+                    }
+                    if (create_basket)
+                    {
+                        BOM.Create_Project_Basket_by_Company(standard_parts, project_path, project_number);
+                    }
                     
                     // Print the name of the configuration used for the BOM table
                     Debug.Print("Name of configuration used for BOM table: " + swBOMFeature.Configuration);
@@ -1151,14 +1163,15 @@ namespace Solidworksaddin
 
             string item_number = "0450.10.56";
            // string searchurl = "https://www.festo.com/net/de_de/SupportPortal/InternetSearch.aspx?q=";
-            string searchurl = "http://www.imkmlgus.ch/Searvhujbujmbjch?q=";
+            string searchurl = "http://www.igus.ch/Searcmh?q=";
 
-            
+            BOM_Assembly_Options(false, false);
             //string nomatches = "WarningMessage";
             string nomatches = "keine Ergebnisse";
             BOM.Check_if_item_number_exists(searchurl, item_number, nomatches);
             BOM.Create_XML_Websearch_File();
             BOM.Read_XML_Websearch_File(websearch_list);
+            
         }
 
         public void ShowPMP()

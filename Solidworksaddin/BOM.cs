@@ -16,7 +16,10 @@ namespace Solidworksaddin
 {
     public class BOM
     {
-       
+
+
+        
+
         /// <summary>
         /// Compare two strings
         /// </summary>
@@ -45,6 +48,7 @@ namespace Solidworksaddin
             public string storage_location { get; set; }
             public string manufacturer { get; set; }
             public string order_number { get; set; }
+            public string valid_order_number { get; set; }
             public bool IsStandard { get; set; }
         }
 
@@ -215,6 +219,37 @@ namespace Solidworksaddin
             else
             {
                 MessageBox.Show("No Template found");
+            }
+        }
+
+        /// <summary>
+        /// Get all suplliers from th Standard parts
+        /// </summary>
+        /// <param name="Standard_Parts"></param>
+        /// <param name="companies"></param>
+        public static void Get_Companies(List<BOM_Part_Informations> Standard_Parts, List<string> companies)
+        {
+            try
+            {
+                var sorted = Standard_Parts.Distinct(new CaseInsensitiveComparer());
+                   
+                string basket_path = "";
+                int pos_nr = 1;
+
+                if (sorted != null)
+                {
+                    foreach (var company in sorted)
+                    {
+                        if (!string.IsNullOrEmpty(company.manufacturer))
+                        {
+                            companies.Add(company.manufacturer);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
             }
         }
 
@@ -687,7 +722,8 @@ namespace Solidworksaddin
         /// <param name="url"></param>
         /// <returns></returns>
         public static bool page_exists(string url)
-        {
+        { 
+           
             bool pageExists;
             try
             {
@@ -696,37 +732,41 @@ namespace Solidworksaddin
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                 request.Method = WebRequestMethods.Http.Head;
                 request.Timeout = 1000;
-                if(request.RequestUri.Scheme == Uri.UriSchemeHttp || request.RequestUri.Scheme == Uri.UriSchemeHttps )
-                {
-                    requesturi = request.RequestUri;
 
-                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                if (request != null)
                 {
-                    responseuri = response.ResponseUri;
-                    pageExists = (responseuri == requesturi);
-                 //   MessageBox.Show(response.StatusCode.ToString());
-                    return pageExists;
-                }
+                    if (request.RequestUri.Scheme == Uri.UriSchemeHttp || request.RequestUri.Scheme == Uri.UriSchemeHttps)
+                    {
+                        requesturi = request.RequestUri;
+
+                        using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                        {
+                            responseuri = response.ResponseUri;
+                            pageExists = (responseuri == requesturi);
+                            //   MessageBox.Show(response.StatusCode.ToString());
+                            return pageExists;
+                        }
+                    }
+                    return false;
                 }
                 return false;
             }
             catch (WebException ex)
             {
-                using (WebResponse response = ex.Response)
+                if (ex.Status == WebExceptionStatus.ProtocolError)
                 {
-                    HttpWebResponse httpResponse = (HttpWebResponse)response;
-                    Console.WriteLine("Error code: {0}", httpResponse.StatusCode);
-                    using (Stream data = response.GetResponseStream())
-                    using (var reader = new StreamReader(data))
+                    if (((HttpWebResponse)ex.Response).StatusCode == HttpStatusCode.NotFound)
                     {
-                        string text = reader.ReadToEnd();
-                        MessageBox.Show(text);
+                        MessageBox.Show("No Ethernet Connection");
                     }
                 }
-                
+                else if (ex.Status == WebExceptionStatus.NameResolutionFailure)
+                {
+                    // handle name resolution failure
+                }
                 return false;
             }
-
+            
         }
 
         /// <summary>
@@ -755,11 +795,11 @@ namespace Solidworksaddin
                     }
                     if (returnvalue.Contains(string.Format(no_matches)))
                     {
-                        MessageBox.Show(string.Format("Teil mit der Nummer {0} der Firma existiert NICHT", item_number));
+                        MessageBox.Show(string.Format("Item Number {0} doesnt exist", item_number));
                     }
                     else
                     {
-                        MessageBox.Show(string.Format("Teil mit der Nummer {0} der Firma existiert", item_number));
+                     //   MessageBox.Show(string.Format("Teil mit der Nummer {0} der Firma existiert", item_number));
 
                     }
                     if (!File.Exists(@"C:\test.txt"))
