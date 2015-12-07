@@ -734,7 +734,7 @@ namespace Solidworksaddin
                 Uri responseuri;
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                 request.Method = WebRequestMethods.Http.Head;
-                request.Timeout = 1000;
+                request.Timeout = 4000;
 
                 if (request != null)
                 {
