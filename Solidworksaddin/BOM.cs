@@ -146,10 +146,11 @@ namespace Solidworksaddin
                             sheet_custom.Cells[SwAddin.excel_template_start_row + cus, SwAddin.excel_template_order_number] = Custom_Parts[cus].order_number;
                             sheet_custom.Cells[SwAddin.excel_template_start_row + cus, SwAddin.excel_template_manufacturer] = Custom_Parts[cus].manufacturer;
                             sheet_custom.Cells[SwAddin.excel_template_start_row + cus, SwAddin.excel_template_storage_location] = Custom_Parts[cus].storage_location;
+                            sheet_custom.Cells[SwAddin.excel_template_start_row + cus, SwAddin.excel_valid_template_order_number] = Custom_Parts[cus].valid_order_number;
                         }
                         if (Custom_Parts.Count != 0)
                         {
-                            worksheet_range = sheet_custom.get_Range("A" + SwAddin.excel_template_start_row.ToString(), "G" + (SwAddin.excel_template_start_row + Custom_Parts.Count - 1).ToString());
+                            worksheet_range = sheet_custom.get_Range("A" + SwAddin.excel_template_start_row.ToString(), "H" + (SwAddin.excel_template_start_row + Custom_Parts.Count - 1).ToString());
                             worksheet_range.Borders.Color = System.Drawing.Color.Black.ToArgb();
                         }
                     }
@@ -172,10 +173,11 @@ namespace Solidworksaddin
                             sheet_standard.Cells[SwAddin.excel_template_start_row + sta, SwAddin.excel_template_order_number] = Standard_Parts[sta].order_number;
                             sheet_standard.Cells[SwAddin.excel_template_start_row + sta, SwAddin.excel_template_manufacturer] = Standard_Parts[sta].manufacturer;
                             sheet_standard.Cells[SwAddin.excel_template_start_row + sta, SwAddin.excel_template_storage_location] = Standard_Parts[sta].storage_location;
+                            sheet_standard.Cells[SwAddin.excel_template_start_row + sta, SwAddin.excel_valid_template_order_number] = Standard_Parts[sta].valid_order_number;
                         }
                         if (Standard_Parts.Count != 0)
                         {
-                            worksheet_range = sheet_standard.get_Range("A" + SwAddin.excel_template_start_row.ToString(), "G" + (SwAddin.excel_template_start_row + Standard_Parts.Count - 1).ToString());
+                            worksheet_range = sheet_standard.get_Range("A" + SwAddin.excel_template_start_row.ToString(), "H" + (SwAddin.excel_template_start_row + Standard_Parts.Count - 1).ToString());
                             worksheet_range.Borders.Color = System.Drawing.Color.Black.ToArgb();
                         }
                     }
@@ -223,7 +225,7 @@ namespace Solidworksaddin
         }
 
         /// <summary>
-        /// Get all suplliers from th Standard parts
+        /// Get all suppliers from th Standard parts
         /// </summary>
         /// <param name="Standard_Parts"></param>
         /// <param name="companies"></param>
@@ -233,8 +235,7 @@ namespace Solidworksaddin
             {
                 var sorted = Standard_Parts.Distinct(new CaseInsensitiveComparer());
                    
-                string basket_path = "";
-                int pos_nr = 1;
+                
 
                 if (sorted != null)
                 {
@@ -307,6 +308,8 @@ namespace Solidworksaddin
                 MessageBox.Show(ex.Message);
             }
         }
+
+
 
         /// <summary>
         /// Returns Lists of Custom_parts and Standard_Parts
@@ -738,7 +741,8 @@ namespace Solidworksaddin
                     if (request.RequestUri.Scheme == Uri.UriSchemeHttp || request.RequestUri.Scheme == Uri.UriSchemeHttps)
                     {
                         requesturi = request.RequestUri;
-
+                        System.Threading.Thread.Sleep(500); 
+                        //ServicePointManager .ServerCertificateValidationCallback +=(sender, cert, chain, sslPolicyErrors) => true;
                         using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
                         {
                             responseuri = response.ResponseUri;
@@ -751,8 +755,11 @@ namespace Solidworksaddin
                 }
                 return false;
             }
-            catch (WebException ex)
+            catch (Exception ex)
             {
+                MessageBox.Show(ex.StackTrace);
+                    return false;
+                /*
                 if (ex.Status == WebExceptionStatus.ProtocolError)
                 {
                     if (((HttpWebResponse)ex.Response).StatusCode == HttpStatusCode.NotFound)
@@ -764,9 +771,46 @@ namespace Solidworksaddin
                 {
                     // handle name resolution failure
                 }
-                return false;
+                return false;*/
+
+
             }
             
+        }
+
+        /// <summary>
+        /// Check all Parts about correct order number
+        /// </summary>
+        /// <param name="Standard_Parts"></param>
+        /// <param name="websearch_list"></param>
+        public static void Process_Order_Number(List<BOM_Part_Informations> Standard_Parts, List<Websearch> websearch_list)
+        {
+            try
+            {
+                foreach(BOM_Part_Informations part in Standard_Parts)
+                {
+                    part.valid_order_number = "na";
+                    foreach (Websearch company in websearch_list)
+                    {
+                        if (String.Equals(part.manufacturer, company.Id, StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (Check_if_item_number_exists(company.Url, part.order_number, company.Nomatchkeyword))
+                            {
+                                part.valid_order_number = "True";
+                            }
+                            else
+                            {
+                                part.valid_order_number = "False";
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.StackTrace);
+            }
         }
 
         /// <summary>
@@ -775,7 +819,7 @@ namespace Solidworksaddin
         /// <param name="searchurl"></param>
         /// <param name="item_number"></param>
         /// <param name="no_matches"></param>
-        public static void Check_if_item_number_exists(string searchurl,string item_number,string no_matches)
+        public static bool Check_if_item_number_exists(string searchurl,string item_number,string no_matches)
         {
 
             
@@ -783,6 +827,7 @@ namespace Solidworksaddin
             {
 
                 string returnvalue = "";
+                MessageBox.Show(string.Format(searchurl, item_number));
                 if (page_exists(string.Format(searchurl, item_number)))
                 {
                     WebRequest req = WebRequest.Create(string.Format(searchurl, item_number));
@@ -796,12 +841,15 @@ namespace Solidworksaddin
                     if (returnvalue.Contains(string.Format(no_matches)))
                     {
                         MessageBox.Show(string.Format("Item Number {0} doesnt exist", item_number));
+                        return false;
                     }
                     else
                     {
                      //   MessageBox.Show(string.Format("Teil mit der Nummer {0} der Firma existiert", item_number));
+                        return true;
 
                     }
+                    /*
                     if (!File.Exists(@"C:\test.txt"))
                     {
                         File.Create(@"C:\test.txt").Close();
@@ -817,17 +865,21 @@ namespace Solidworksaddin
 
                         writer.WriteLine(returnvalue);
 
-                    }
+                    }*/
                 }
                 else
                 {
                     MessageBox.Show("Url doesnt exist");
+                    return false;
                 }
                 
             }
             catch (Exception ex)
             {
+                
                 MessageBox.Show(ex.Message);
+                return false;
+                
             }
         }
 

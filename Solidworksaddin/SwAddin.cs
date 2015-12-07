@@ -65,6 +65,7 @@ namespace Solidworksaddin
         public const int excel_template_storage_location = 5;
         public const int excel_template_manufacturer = 6;
         public const int excel_template_order_number = 7;
+        public const int excel_valid_template_order_number = 8;
 
         public const string custom_part_sheetname = "BOM_Custom";
         public const string standard_part_sheetname = "BOM_Standard";
@@ -965,8 +966,8 @@ namespace Solidworksaddin
                   //  ProcessBomFeature(swModel, swBOMFeature);
                     BOM.Get_Sorted_Part_Data(swModel, swBOMFeature, standard_parts, custom_parts, project_path);
                //     Excel_Search(standard_parts);
-                    BOM.Get_Companies(standard_parts, companies);
-
+                  //  BOM.Get_Companies(standard_parts, companies);
+                    BOM.Process_Order_Number(standard_parts, websearch_list);
                     if (create_bom)
                     {
                         BOM.Excel_BOM(swModel, standard_parts, custom_parts, project_number);
@@ -1160,7 +1161,7 @@ namespace Solidworksaddin
         {
             //CheckInterference();
             //BOM_Assembly();
-
+            /*
             string item_number = "0450.10.56";
            // string searchurl = "https://www.festo.com/net/de_de/SupportPortal/InternetSearch.aspx?q=";
             string searchurl = "http://www.igus.ch/Searcmh?q=";
@@ -1168,10 +1169,10 @@ namespace Solidworksaddin
             BOM_Assembly_Options(false, false);
             //string nomatches = "WarningMessage";
             string nomatches = "keine Ergebnisse";
-            BOM.Check_if_item_number_exists(searchurl, item_number, nomatches);
+            BOM.Check_if_item_number_exists(searchurl, item_number, nomatches);*/
             BOM.Create_XML_Websearch_File();
             BOM.Read_XML_Websearch_File(websearch_list);
-            
+            BOM_Assembly_Options(true, true);
         }
 
         public void ShowPMP()
