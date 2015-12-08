@@ -277,7 +277,7 @@ namespace Solidworksaddin
                         {
                             pos_nr = 1;
                             basket_path = projectpath + projectnumber.ToString() + "_" + "Basket" + "_" + company.manufacturer + "_" + DateTime.Today.ToString("yyyyMMdd") + ".csv";
-                           // MessageBox.Show(basket_path);
+                          //  MessageBox.Show(basket_path);
                             if (!File.Exists(basket_path))
                             {
                                 File.Create(basket_path).Close();
@@ -305,7 +305,7 @@ namespace Solidworksaddin
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show(ex.StackTrace);
             }
         }
 
@@ -641,46 +641,52 @@ namespace Solidworksaddin
 
 
 
-
-
-            if (!File.Exists(SwAddin.path_to_websearch_file))
+            try
             {
 
-                XmlWriterSettings settings = new XmlWriterSettings();
-
-               // settings.Encoding = Encoding.GetEncoding("UTF-8");
-                settings.Indent = true;
-                settings.IndentChars = "\t";
-               // settings.Indent = true;
-               // settings.NewLineHandling = NewLineHandling.Replace;
-               // settings.IndentChars = " ";
-               // settings.NewLineOnAttributes = true;
-              //  settings.OmitXmlDeclaration = true;
-                
-                   
-                
-                using (XmlWriter writer = XmlWriter.Create(SwAddin.path_to_websearch_file, settings))//
+                if (!File.Exists(SwAddin.path_to_websearch_file))
                 {
-                    writer.WriteStartDocument();
-                    
-                    writer.WriteStartElement("Websearch_By_Company");
 
-                    foreach (Websearch websearch in websearchlist)
+                    XmlWriterSettings settings = new XmlWriterSettings();
+
+                    // settings.Encoding = Encoding.GetEncoding("UTF-8");
+                    settings.Indent = true;
+                    settings.IndentChars = "\t";
+                    // settings.Indent = true;
+                    // settings.NewLineHandling = NewLineHandling.Replace;
+                    // settings.IndentChars = " ";
+                    // settings.NewLineOnAttributes = true;
+                    //  settings.OmitXmlDeclaration = true;
+
+
+
+                    using (XmlWriter writer = XmlWriter.Create(SwAddin.path_to_websearch_file, settings))//
                     {
-                        writer.WriteStartElement("Websearch");
+                        writer.WriteStartDocument();
 
-                        writer.WriteElementString("ID", websearch.Id);
-                        writer.WriteElementString("URL", websearch.Url);
-                        writer.WriteElementString("NoMatch", websearch.Nomatchkeyword);
-                        
+                        writer.WriteStartElement("Websearch_By_Company");
+
+                        foreach (Websearch websearch in websearchlist)
+                        {
+                            writer.WriteStartElement("Websearch");
+
+                            writer.WriteElementString("ID", websearch.Id);
+                            writer.WriteElementString("URL", websearch.Url);
+                            writer.WriteElementString("NoMatch", websearch.Nomatchkeyword);
+
+
+                            writer.WriteEndElement();
+                        }
 
                         writer.WriteEndElement();
-                    }
+                        writer.WriteEndDocument();
 
-                    writer.WriteEndElement();
-                    writer.WriteEndDocument();
-                    
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.StackTrace);
             }
         }
 
@@ -827,7 +833,6 @@ namespace Solidworksaddin
             {
 
                 string returnvalue = "";
-                MessageBox.Show(string.Format(searchurl, item_number));
                 if (page_exists(string.Format(searchurl, item_number)))
                 {
                     WebRequest req = WebRequest.Create(string.Format(searchurl, item_number));
@@ -877,7 +882,7 @@ namespace Solidworksaddin
             catch (Exception ex)
             {
                 
-                MessageBox.Show(ex.Message);
+                MessageBox.Show(ex.StackTrace);
                 return false;
                 
             }

@@ -932,6 +932,7 @@ namespace Solidworksaddin
                     path = swModel.GetPathName();
                     informations = path.Split('\\');
 
+                    project_path = "";
                     for (int i = 0; i < 4; i++)
                     {
                         project_path += informations[i] + "\\";
