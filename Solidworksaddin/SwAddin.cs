@@ -1163,13 +1163,13 @@ namespace Solidworksaddin
             //CheckInterference();
             //BOM_Assembly();
             /*
-            string item_number = "0450.10.56";
+            string item_number = "0450.10.76.3";
            // string searchurl = "https://www.festo.com/net/de_de/SupportPortal/InternetSearch.aspx?q=";
-            string searchurl = "http://www.igus.ch/Searcmh?q=";
+            string searchurl = "http://www.igus.ch/Search?q=";
 
             BOM_Assembly_Options(false, false);
             //string nomatches = "WarningMessage";
-            string nomatches = "keine Ergebnisse";
+            string nomatches = "Leider lieferte Ihre Suchanfrage keine Treffer. ";
             BOM.Check_if_item_number_exists(searchurl, item_number, nomatches);*/
             BOM.Create_XML_Websearch_File();
             BOM.Read_XML_Websearch_File(websearch_list);

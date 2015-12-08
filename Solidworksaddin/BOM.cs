@@ -636,7 +636,7 @@ namespace Solidworksaddin
             List<Websearch> websearchlist = new List<Websearch>();
             websearchlist.Add(new Websearch("Festo","https://www.festo.com/net/de_de/SupportPortal/InternetSearch.aspx?q={0}","WarningMessage"));
             websearchlist.Add(new Websearch("Hanser", "http://www.hanser.ch/web/ganter.aspx?cmd=normen&quickfind={0}&LCID=1031&pageID=14##", "0 Treffer"));
-            websearchlist.Add(new Websearch("Igus", "http://www.igus.ch/Search?q={0}", "keine Ergebnisse"));
+            websearchlist.Add(new Websearch("Igus", "http://www.igus.ch/Search?q={0}", "Artikel_SucheResultText" + "\"" + ">keine Ergebnisse"));
             websearchlist.Add(new Websearch("Würth", "https://eshop.wuerth-ag.ch/is-bin/INTERSHOP.enfinity/WFS/3126-B1-Site/de_DE/-/CHF/ViewAfterSearch-ExecuteAfterSearch?ufd-SearchCategory=Gesamtkatalog&SearchCategory=3126&SearchResultType=&EffectiveSearchTerm=&VisibleSearchTerm={0}&x=9&y=6", "Anzahl gefundene Produkte: 0"));
 
 
@@ -740,7 +740,7 @@ namespace Solidworksaddin
                 Uri responseuri;
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                 request.Method = WebRequestMethods.Http.Head;
-                request.Timeout = 4000;
+                request.Timeout = 6000;
 
                 if (request != null)
                 {
@@ -763,7 +763,7 @@ namespace Solidworksaddin
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.StackTrace);
+               // MessageBox.Show(ex.StackTrace);
                     return false;
                 /*
                 if (ex.Status == WebExceptionStatus.ProtocolError)
@@ -846,6 +846,24 @@ namespace Solidworksaddin
                     if (returnvalue.Contains(string.Format(no_matches)))
                     {
                         MessageBox.Show(string.Format("Item Number {0} doesnt exist", item_number));
+
+                        if (!File.Exists(string.Format(@"C:\{0}.txt", item_number)))
+                        {
+                            File.Create(string.Format(@"C:\{0}.txt", item_number)).Close();
+                        }
+                        string delimter = ";";
+                        string capsulate = "\"";
+
+
+
+
+                        using (System.IO.TextWriter writer = File.CreateText(string.Format(@"C:\{0}.txt", item_number)))
+                        {
+
+                            writer.WriteLine(returnvalue);
+
+                        }
+
                         return false;
                     }
                     else
@@ -854,27 +872,12 @@ namespace Solidworksaddin
                         return true;
 
                     }
-                    /*
-                    if (!File.Exists(@"C:\test.txt"))
-                    {
-                        File.Create(@"C:\test.txt").Close();
-                    }
-                    string delimter = ";";
-                    string capsulate = "\"";
 
-
-
-
-                    using (System.IO.TextWriter writer = File.CreateText(@"C:\test.txt"))
-                    {
-
-                        writer.WriteLine(returnvalue);
-
-                    }*/
+                    
                 }
                 else
                 {
-                    MessageBox.Show("Url doesnt exist");
+                    MessageBox.Show(string.Format("Url : {0} doesnt exist", searchurl));
                     return false;
                 }
                 
