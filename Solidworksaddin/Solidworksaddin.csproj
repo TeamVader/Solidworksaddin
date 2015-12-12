@@ -143,7 +143,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="BOM.cs" />
+    <Compile Include="Color.cs" />
     <Compile Include="EventHandling.cs" />
+    <Compile Include="Excel_Functions.cs" />
     <Compile Include="PMPHandler.cs" />
     <Compile Include="SwAddin.cs">
       <SubType>Code</SubType>

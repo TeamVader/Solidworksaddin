@@ -971,7 +971,7 @@ namespace Solidworksaddin
                     BOM.Process_Order_Number(standard_parts, websearch_list);
                     if (create_bom)
                     {
-                        BOM.Excel_BOM(swModel, standard_parts, custom_parts, project_number);
+                        Excel_Functions.Excel_BOM(swModel, standard_parts, custom_parts, project_number);
                     }
                     if (create_basket)
                     {
