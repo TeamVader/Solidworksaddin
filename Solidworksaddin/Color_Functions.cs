@@ -44,7 +44,7 @@ namespace Solidworksaddin
 
                     Set_transparency(swModel,part.part_number,docname[0]);
                  }
-             //    MessageBox.Show(swDocname);
+             
 
            }
            catch (Exception ex)
