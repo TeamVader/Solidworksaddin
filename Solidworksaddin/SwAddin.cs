@@ -888,11 +888,11 @@ namespace Solidworksaddin
 
         public void BOM_Assembly()
         {
-            BOM_Assembly_Options(true, true);
+            BOM_Assembly_Options(true, true,true,true);
         }
        
 
-        public void BOM_Assembly_Options(bool create_basket, bool create_bom)
+        public void BOM_Assembly_Options(bool create_basket, bool create_bom, bool check_ordernumer, bool set_transparency)
         {
 
             try
@@ -924,8 +924,12 @@ namespace Solidworksaddin
                     nbrType = (int)swNumberingType_e.swNumberingType_Detailed;
 
                     swBOMAnnotation = (BomTableAnnotation)swModelDocExt.InsertBomTable3(Bom_template, 0, 0, BomType, Configuration, false, nbrType, true);
-                    swModel.ClearSelection2(true);
+             //       swModel.ClearSelection2(true);
 
+                    if (swBOMAnnotation == null)
+                    {
+                        return;
+                    }
                     swBOMFeature = (BomFeature)swBOMAnnotation.BomFeature;
                     swBOMFeature.PartConfigurationGrouping = 3; //Display as on Item 2
 
@@ -968,7 +972,11 @@ namespace Solidworksaddin
                     BOM.Get_Sorted_Part_Data(swModel, swBOMFeature, standard_parts, custom_parts, project_path);
                //     Excel_Search(standard_parts);
                   //  BOM.Get_Companies(standard_parts, companies);
-                    BOM.Process_Order_Number(standard_parts, websearch_list);
+
+                    if (check_ordernumer)
+                    {
+                        BOM.Process_Order_Number(standard_parts, websearch_list);
+                    }
                     if (create_bom)
                     {
                         Excel_Functions.Excel_BOM(swModel, standard_parts, custom_parts, project_number);
@@ -977,7 +985,11 @@ namespace Solidworksaddin
                     {
                         BOM.Create_Project_Basket_by_Company(standard_parts, project_path, project_number);
                     }
-                    
+                    if (set_transparency)
+                    {
+                        Color_Functions.Set_Custom_part_Transparency(swModel, standard_parts, custom_parts);
+                    }
+
                     // Print the name of the configuration used for the BOM table
                     Debug.Print("Name of configuration used for BOM table: " + swBOMFeature.Configuration);
 
@@ -1171,9 +1183,13 @@ namespace Solidworksaddin
             //string nomatches = "WarningMessage";
             string nomatches = "Leider lieferte Ihre Suchanfrage keine Treffer. ";
             BOM.Check_if_item_number_exists(searchurl, item_number, nomatches);*/
-            BOM.Create_XML_Websearch_File();
+         /*   BOM.Create_XML_Websearch_File();
             BOM.Read_XML_Websearch_File(websearch_list);
-            BOM_Assembly_Options(true, true);
+            BOM_Assembly_Options(true, true);*/
+
+            BOM_Assembly_Options(false,false,false,true);
+
+            
         }
 
         public void ShowPMP()
