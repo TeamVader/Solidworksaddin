@@ -988,6 +988,7 @@ namespace Solidworksaddin
                     if (set_transparency)
                     {
                         Color_Functions.Set_Custom_part_Transparency(swModel, standard_parts, custom_parts);
+                        Color_Functions.Set_Standard_part_Color(swModel, standard_parts, custom_parts);
                     }
 
                     // Print the name of the configuration used for the BOM table

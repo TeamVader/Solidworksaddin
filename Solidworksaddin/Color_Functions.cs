@@ -41,8 +41,10 @@ namespace Solidworksaddin
 
                  foreach(BOM.BOM_Part_Informations part in Standard_Parts)
                  {
-
-                    Set_transparency(swModel,part.part_number,docname[0]);
+                    
+                         Change_Color(swModel, part.part_number, docname[0]);
+                     
+                    
                  }
              
 
@@ -64,10 +66,9 @@ namespace Solidworksaddin
 
                foreach (BOM.BOM_Part_Informations part in Custom_Parts)
                {
-                   for(int i = 1; i <= int.Parse(part.quantity) ; i++)
-                   {
-                     Set_transparency(swModel, part.part_number + "-" + i.ToString(), docname[0]);
-                   }
+                   
+                     Set_transparency(swModel, part.part_number, docname[0]);
+                  
                }
                //    MessageBox.Show(swDocname);
 
@@ -81,50 +82,115 @@ namespace Solidworksaddin
        public static void Set_transparency(ModelDoc2 swModel, string name,string docname)
        {
            AssemblyDoc swAssembly = null;
+
+           Component2 swComp = null;
+           ModelDoc2 swCompDoc = null;
            bool boolstatus = false;
+
            try
            {
                if (swModel.GetType() == (int)swDocumentTypes_e.swDocASSEMBLY)
                {
-                  // MessageBox.Show(name + "@" + docname);
-                   swModel.ClearSelection2(true);
-                   
-                   boolstatus = swModel.Extension.SelectByID2(name + "@" + docname, "COMPONENT", 0, 0, 0, true, 0, null, 0);
-                   swAssembly = ((AssemblyDoc)(swModel));
-                  // MessageBox.Show(boolstatus.ToString());
-                   swAssembly.SetComponentTransparent(true);
-                   swModel.ClearSelection2(true);
 
+                   swModel.ClearSelection2(true);
+                   //  boolstatus = swModel.Extension.SelectByID2(name + "@" + docname, "COMPONENT", 0, 0, 0, true, 0, null, 0);
+                   //  SelectionMgr SwSelMgr = swModel.SelectionManager;
+                   swAssembly = (AssemblyDoc)swModel;
+                   var Components = swAssembly.GetComponents(false);
+
+                   for (int i = 0; i < Components.Length; i++)
+                   {
+
+                       //swComp = swAssembly.GetComponentByName(name);
+                       swComp = Components[i];
+                       // MessageBox.Show(name);
+                       if (swComp != null)
+                       {
+                           if (swComp.Name2.Contains(name))
+                           {
+                               var vMatProps = swComp.MaterialPropertyValues;
+                               if (vMatProps == null)
+                               {
+                                   swCompDoc = swComp.GetModelDoc();
+                                   if (swCompDoc == null)
+                                   {
+                                       return;
+                                   }
+                                   vMatProps = swCompDoc.MaterialPropertyValues;
+                               }
+                               vMatProps[7] = 1; //Transparency
+                               
+                               swComp.MaterialPropertyValues = vMatProps;
+                               swModel.ClearSelection2(true);
+                           }
+
+
+                       }
+                   }
                }
            }
            catch (Exception ex)
            {
-               MessageBox.Show(ex.StackTrace);
+               MessageBox.Show(ex.Message + ex.StackTrace);
            }
-
-           //  boolstatus = swDoc.Extension.SelectByID2("195599_GRLA_F_1_8_QS_8_D-3@toolbox-tutorial", "COMPONENT", 0, 0, 0, false, 0, null, 0);
 
 
        }
 
-        public static void Change_Color(ModelDoc2 swModel,string name)
+       public static void Change_Color(ModelDoc2 swModel, string name, string docname)
         {
             AssemblyDoc swAssembly = null;
+           
+            Component2 swComp = null;
+            ModelDoc2 swCompDoc = null;
+            bool boolstatus = false;
+
             try
             {
                 if (swModel.GetType() == (int)swDocumentTypes_e.swDocASSEMBLY)
                 {
-                    swAssembly = ((AssemblyDoc)(swModel));
-                    swModel.ClearSelection2(true);
-                    swModel.Extension.SelectByID2(name, "COMPONENT", 0, 0, 0, true, 0, null, 0);
-                    swAssembly.SetComponentTransparent(true);
-                    swModel.ClearSelection2(true);
 
+                    swModel.ClearSelection2(true);
+                    //  boolstatus = swModel.Extension.SelectByID2(name + "@" + docname, "COMPONENT", 0, 0, 0, true, 0, null, 0);
+                    //  SelectionMgr SwSelMgr = swModel.SelectionManager;
+                    swAssembly = (AssemblyDoc)swModel;
+                    var Components = swAssembly.GetComponents(false);
+
+                    for (int i = 0; i < Components.Length; i++)
+                    {
+
+                        //swComp = swAssembly.GetComponentByName(name);
+                        swComp = Components[i];
+                        // MessageBox.Show(name);
+                        if (swComp != null)
+                        {
+                            if (swComp.Name2.Contains(name))
+                            {
+                                var vMatProps = swComp.MaterialPropertyValues;
+                                if (vMatProps == null)
+                                {
+                                    swCompDoc = swComp.GetModelDoc();
+                                    if (swCompDoc == null)
+                                    {
+                                        return;
+                                    }
+                                    vMatProps = swCompDoc.MaterialPropertyValues;
+                                }
+                                vMatProps[0] = 1; //Red
+                                vMatProps[1] = 0; //Green
+                                vMatProps[2] = 0; //Blue
+                                swComp.MaterialPropertyValues = vMatProps;
+                                swModel.ClearSelection2(true);
+                            }
+
+
+                        }
+                    }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.StackTrace);
+                MessageBox.Show(ex.Message + ex.StackTrace);
             }
 
           //  boolstatus = swDoc.Extension.SelectByID2("195599_GRLA_F_1_8_QS_8_D-3@toolbox-tutorial", "COMPONENT", 0, 0, 0, false, 0, null, 0);

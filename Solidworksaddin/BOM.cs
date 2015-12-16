@@ -50,6 +50,8 @@ namespace Solidworksaddin
             public string order_number { get; set; }
             public string valid_order_number { get; set; }
             public bool IsStandard { get; set; }
+            public string next_bigger_size { get; set; }
+            public string next_smaller_Size { get; set; }
         }
 
         public class Websearch
