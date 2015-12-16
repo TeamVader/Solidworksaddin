@@ -19,6 +19,29 @@ namespace Solidworksaddin
     {
 
         /// <summary>
+        /// Represents Keywords for search Items
+        /// </summary>
+        public class Item_Keywords
+        {
+            string _id;
+            List<string> _keywords;
+
+
+
+            public Item_Keywords(string id, List<string> keywords)
+            {
+                this._id = id;
+                this._keywords = keywords;
+                
+                
+            }
+
+            public string Id { get { return _id; } }
+            public List<string> Keywords { get { return _keywords; } }
+           
+        }
+
+        /// <summary>
         /// Write Data in Template
         /// </summary>
         /// <param name="Header"></param>
@@ -263,6 +286,93 @@ namespace Solidworksaddin
             }
         }
 
+        public static void Create_Excel_Keywords_File_File()
+        {
+
+            List<Item_Keywords> Item_Keywords_list = new List<Item_Keywords>();
+            Item_Keywords_list.Add(new Item_Keywords("Festo", new List<string>{ "bubu", "sigi" }));
+            Item_Keywords_list.Add(new Item_Keywords("Hanser", new List<string> { "bubu", "sigi" }));
+            Item_Keywords_list.Add(new Item_Keywords("Igus", new List<string> { "bubu", "sigi" }));
+            Item_Keywords_list.Add(new Item_Keywords("Würth", new List<string> { "bubu", "sigi" }));
+
+
+
+            try
+            {
+
+                if (!File.Exists(SwAddin.path_to_excel_keywords_file))
+                {
+
+                    XmlWriterSettings settings = new XmlWriterSettings();
+
+                   
+                    settings.Indent = true;
+                    settings.IndentChars = "\t";
+
+                    using (XmlWriter writer = XmlWriter.Create(SwAddin.path_to_excel_keywords_file, settings))//
+                    {
+                        writer.WriteStartDocument();
+
+                        writer.WriteStartElement("Item_Keywords_for_Excel_Search");
+
+                        foreach (Item_Keywords Itemkeywords in Item_Keywords_list)
+                        {
+                            writer.WriteStartElement("Item_Keywords");
+
+                            writer.WriteElementString("ID", Itemkeywords.Id);
+                            for (int i = 0; i < Itemkeywords.Keywords.Count; i++)
+                            {
+                                writer.WriteElementString("keyword", Itemkeywords.Keywords[i]);
+                            }
+                            
+
+
+                            writer.WriteEndElement();
+                        }
+
+                        writer.WriteEndElement();
+                        writer.WriteEndDocument();
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.StackTrace);
+            }
+        }
+
+
+        
+        public static void Read_Excel_Keywords_File(List<Item_Keywords> keywords_list)
+        {
+
+            try
+            {
+                if (File.Exists(SwAddin.path_to_excel_keywords_file))
+                {
+
+                    XmlDocument xdoc = new XmlDocument();
+                    xdoc.Load(SwAddin.path_to_websearch_file);
+
+                    foreach (XmlNode Itemkeywords in xdoc.SelectNodes("/Item_Keywords_for_Excel_Search/*"))
+                    {
+                        if (Itemkeywords != null)
+                        {
+                          //  keywords_list.Add(new Item_Keywords(Itemkeywords["ID"].InnerText, Itemkeywords["URL"].InnerText));
+                            Debug.Print(Itemkeywords["ID"].InnerText + Itemkeywords["URL"].InnerText + Itemkeywords["NoMatch"].InnerText);
+                        }
+
+                    }
+
+
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.StackTrace);
+            }
+        }
 
     }
 }

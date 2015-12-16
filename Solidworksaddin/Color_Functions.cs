@@ -32,17 +32,15 @@ namespace Solidworksaddin
 
        public static void Set_Standard_part_Color(ModelDoc2 swModel,List<BOM.BOM_Part_Informations> Standard_Parts, List<BOM.BOM_Part_Informations> Custom_Parts)
        {
-           string swDocname;
-           string[] docname;
+           
            try
            {
-                 swDocname = swModel.GetTitle();
-                 docname = swDocname.Split('.');
+                 
 
                  foreach(BOM.BOM_Part_Informations part in Standard_Parts)
                  {
                     
-                         Change_Color(swModel, part.part_number, docname[0]);
+                         Change_Color(swModel, part.part_number);
                      
                     
                  }
@@ -57,20 +55,18 @@ namespace Solidworksaddin
 
        public static void Set_Custom_part_Transparency(ModelDoc2 swModel, List<BOM.BOM_Part_Informations> Standard_Parts, List<BOM.BOM_Part_Informations> Custom_Parts)
        {
-           string swDocname;
-           string[] docname;
+           
            try
            {
-               swDocname = swModel.GetTitle();
-               docname = swDocname.Split('.');
+               
 
                foreach (BOM.BOM_Part_Informations part in Custom_Parts)
                {
                    
-                     Set_transparency(swModel, part.part_number, docname[0]);
+                     Set_transparency(swModel, part.part_number);
                   
                }
-               //    MessageBox.Show(swDocname);
+             
 
            }
            catch (Exception ex)
@@ -79,7 +75,7 @@ namespace Solidworksaddin
            }
        }
 
-       public static void Set_transparency(ModelDoc2 swModel, string name,string docname)
+       public static void Set_transparency(ModelDoc2 swModel, string name)
        {
            AssemblyDoc swAssembly = null;
 
@@ -137,7 +133,7 @@ namespace Solidworksaddin
 
        }
 
-       public static void Change_Color(ModelDoc2 swModel, string name, string docname)
+       public static void Change_Color(ModelDoc2 swModel, string name)
         {
             AssemblyDoc swAssembly = null;
            

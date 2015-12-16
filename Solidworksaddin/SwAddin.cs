@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.IO;
 using Microsoft.Office.Interop.Excel;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 
 
@@ -48,11 +49,16 @@ namespace Solidworksaddin
         public const int mainItemID4 = 3;
         public const int mainItemID5 = 4;
         public const int mainItemID6 = 5;
+        public const int mainItemID7 = 6;
+        public const int mainItemID8 = 7;
+        public const int mainItemID9 = 8;
         public const int flyoutGroupID = 91;
 
         public List<string> companies = new List<string>();
         public List<BOM.Websearch> websearch_list = new List<BOM.Websearch>();
         public const string path_to_websearch_file = @"C:\Users\alex\Desktop\Websearches.xml";
+        public const string path_to_excel_keywords_file = @"C:\Users\alex\Desktop\Excel_Keywords.xml";
+
 
         #region Excel Template Column Constants
         public const int excel_template_col_count = 7;
@@ -270,7 +276,7 @@ namespace Solidworksaddin
             if (iBmp == null)
                 iBmp = new BitmapHandler();
             Assembly thisAssembly;
-            int cmdIndex0, cmdIndex1, cmdIndex2, cmdIndex3, cmdIndex4, cmdIndex5;
+            int cmdIndex0, cmdIndex1, cmdIndex2, cmdIndex3, cmdIndex4, cmdIndex5,cmdIndex6,cmdIndex7,cmdIndex8;
             string Title = "Alex's Solidworks Addin", ToolTip = "Alex's Solidworks Addin";
 
 
@@ -289,7 +295,7 @@ namespace Solidworksaddin
             //get the ID information stored in the registry
             bool getDataResult = iCmdMgr.GetGroupDataFromRegistry(mainCmdGroupID, out registryIDs);
 
-            int[] knownIDs = new int[6] { mainItemID1, mainItemID2,mainItemID3,mainItemID4,mainItemID5, mainItemID6 };
+            int[] knownIDs = new int[7] { mainItemID1, mainItemID2,mainItemID3,mainItemID4,mainItemID5, mainItemID6,mainItemID7 };
 
             if (getDataResult)
             {
@@ -316,7 +322,9 @@ namespace Solidworksaddin
 
             cmdIndex4 = cmdGroup.AddCommandItem2("Show PMP", -1, "Display sample property manager", "Show PMP",2, "ShowPMP", "EnablePMP", mainItemID5, menuToolbarOption);
             cmdIndex5 = cmdGroup.AddCommandItem2("BOM Export", -1, "Export BOM from Assembly", "BOM Export", 2, "BOM_Assembly", "", mainItemID6, menuToolbarOption);
+            cmdIndex6 = cmdGroup.AddCommandItem2("Database check", -1, "Search Components in Database", "Search Components in Database", 2, "Check_Components_against_Database", "", mainItemID7, menuToolbarOption);
 
+            
             cmdGroup.HasToolbar = true;
             cmdGroup.HasMenu = true;
             cmdGroup.Activate();
@@ -368,8 +376,8 @@ namespace Solidworksaddin
 
                     CommandTabBox cmdBox = cmdTab.AddCommandTabBox();
 
-                    int[] cmdIDs = new int[7];
-                    int[] TextType = new int[7];
+                    int[] cmdIDs = new int[8];
+                    int[] TextType = new int[8];
 
                     cmdIDs[0] = cmdGroup.get_CommandID(cmdIndex0);
 
@@ -395,11 +403,14 @@ namespace Solidworksaddin
 
                     TextType[5] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal;
 
+                    cmdIDs[6] = cmdGroup.get_CommandID(cmdIndex6);
+
+                    TextType[6] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal;
 
 
-                    cmdIDs[6] = cmdGroup.ToolbarId;
+                    cmdIDs[7] = cmdGroup.ToolbarId;
 
-                    TextType[6] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal | (int)swCommandTabButtonFlyoutStyle_e.swCommandTabButton_ActionFlyout;
+                    TextType[7] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal | (int)swCommandTabButtonFlyoutStyle_e.swCommandTabButton_ActionFlyout;
 
                     
 
@@ -884,6 +895,101 @@ namespace Solidworksaddin
             }
         }
 
+        public void Check_Components_against_Database()
+        {
+            try
+            {
+                ModelDoc2 swModel = default(ModelDoc2);
+                ModelDocExtension swModelDocExt = default(ModelDocExtension);
+                BomTableAnnotation swBOMAnnotation = default(BomTableAnnotation);
+                BomFeature swBOMFeature = default(BomFeature);
+                List<BOM.BOM_Part_Informations> standard_parts = new List<BOM.BOM_Part_Informations>();
+                List<BOM.BOM_Part_Informations> custom_parts = new List<BOM.BOM_Part_Informations>();
+                string Bom_template = "C:\\Program Files\\SOLIDWORKS Corp\\SOLIDWORKS\\lang\\german\\bom_ae.sldbomtbt"; //bom-standard.sldbomtbt
+                string Configuration = null;
+                String path = "";
+                String[] informations;
+                swModel = iSwApp.ActiveDoc;
+                swModelDocExt = (ModelDocExtension)swModel.Extension;
+                
+                int BomType = 0;
+                int nbrType = 0;
+                
+
+                if (swModel.GetType() == (int)swDocumentTypes_e.swDocASSEMBLY)
+                {
+                    BomType = (int)swBomType_e.swBomType_Indented;
+                    Configuration = "Default";
+                    nbrType = (int)swNumberingType_e.swNumberingType_Detailed;
+
+                    swBOMAnnotation = (BomTableAnnotation)swModelDocExt.InsertBomTable3(Bom_template, 0, 0, BomType, Configuration, false, nbrType, true);
+                    //       swModel.ClearSelection2(true);
+
+                    if (swBOMAnnotation == null)
+                    {
+                        return;
+                    }
+                    swBOMFeature = (BomFeature)swBOMAnnotation.BomFeature;
+                    swBOMFeature.PartConfigurationGrouping = 3; //Display as on Item 2
+
+                    path = swModel.GetPathName();
+                    informations = path.Split('\\');
+
+                    project_path = "";
+                    for (int i = 0; i < 4; i++)
+                    {
+                        project_path += informations[i] + "\\";
+                    }
+
+                    string[] numbers = Regex.Split(informations[2].Substring(0, 10), @"\D+");
+                    foreach (string value in numbers)
+                    {
+                        if (!string.IsNullOrEmpty(value))
+                        {
+                            if (value.Length >= 4)
+                            {
+                                project_number = int.Parse(value);
+                                // MessageBox.Show(projectnumber.ToString());
+                                break;
+
+                            }
+                            else
+                            {
+                                project_number = 0;
+                            }
+
+                        }
+
+                    }
+                    if (project_number == 0)
+                    {
+                        MessageBox.Show("No Project Number avaible");
+                    }
+
+
+                    
+                        BOM.Get_Sorted_Part_Data(swModel, swBOMFeature, standard_parts, custom_parts, project_path);
+
+                       
+                        Color_Functions.Set_Standard_part_Color(swModel, standard_parts, custom_parts);
+                        Color_Functions.Set_Custom_part_Transparency(swModel, standard_parts, custom_parts);
+                        swModel.ShowNamedView2("Isometric", -1);
+                        swModel.ViewZoomtofit2();
+
+                    
+
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + ex.StackTrace);
+            }
+
+
+            //   swBOMTable = ((BomTableAnnotation)(swDoc.Extension.InsertBomTable(Bom_template, 237, 27, ((int)( swBomType_e.swBomType_TopLevelOnly)), "")));
+
+        }
+
 
 
         public void BOM_Assembly()
@@ -1007,7 +1113,7 @@ namespace Solidworksaddin
         }
 
         
-
+        
 
        
         public void ProcessTableAnn(ModelDoc2 swModel, TableAnnotation swTableAnn, string ConfigName)
