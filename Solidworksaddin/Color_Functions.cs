@@ -32,28 +32,40 @@ namespace Solidworksaddin
 
        public static void Set_Standard_part_Color(ModelDoc2 swModel,List<BOM.BOM_Part_Informations> Standard_Parts, List<BOM.BOM_Part_Informations> Custom_Parts)
        {
-           
+
            try
            {
-                 
 
-                 foreach(BOM.BOM_Part_Informations part in Standard_Parts)
-                 {
-                     if (part.IsStandard)
-                     {
-                         Set_transparency(swModel, part.part_number);
-                  
-                     }
-                     else
-                     {
-                         Change_Color(swModel, part.part_number);
 
-                     }
-                     
-                    
-                 }
-             
+               foreach (BOM.BOM_Part_Informations part in Standard_Parts)
+               {
+                   if (!part.IsAssembly)
+                   {
+                       if (part.IsStandard)
+                       {
+                        //  MessageBox.Show("part number" + part.part_number);
 
+                           Set_transparency(swModel,part.part_number);
+
+                       }
+
+                       else
+                       {
+                           Change_Color(swModel, part.part_number, "Red");
+
+                       }
+
+                       if (part.valid_order_number == "False")
+                       {
+                           Change_Color(swModel, part.part_number, "Green");
+
+                       }
+
+
+                   }
+
+
+               }
            }
            catch (Exception ex)
            {
@@ -70,9 +82,11 @@ namespace Solidworksaddin
 
                foreach (BOM.BOM_Part_Informations part in Custom_Parts)
                {
-                   
-                     Set_transparency(swModel, part.part_number);
-                  
+                   if (!part.IsAssembly)
+                   {
+
+                       Set_transparency(swModel, part.part_number);
+                   }
                }
              
 
@@ -107,11 +121,12 @@ namespace Solidworksaddin
 
                        //swComp = swAssembly.GetComponentByName(name);
                        swComp = Components[i];
-                       // MessageBox.Show(name);
                        if (swComp != null)
                        {
                            if (swComp.Name2.Contains(name))
                            {
+                            //   MessageBox.Show(name);
+
                                var vMatProps = swComp.MaterialPropertyValues;
                                if (vMatProps == null)
                                {
@@ -141,14 +156,16 @@ namespace Solidworksaddin
 
        }
 
-       public static void Change_Color(ModelDoc2 swModel, string name)
+       public static void Change_Color(ModelDoc2 swModel, string name,string color)
         {
             AssemblyDoc swAssembly = null;
            
             Component2 swComp = null;
             ModelDoc2 swCompDoc = null;
+            string compare_name = "";
+            string[] Componentsubstring;
             bool boolstatus = false;
-
+            
             try
             {
                 if (swModel.GetType() == (int)swDocumentTypes_e.swDocASSEMBLY)
@@ -159,17 +176,19 @@ namespace Solidworksaddin
                     //  SelectionMgr SwSelMgr = swModel.SelectionManager;
                     swAssembly = (AssemblyDoc)swModel;
                     var Components = swAssembly.GetComponents(false);
-
+                   // MessageBox.Show(Components.Length.ToString());
                     for (int i = 0; i < Components.Length; i++)
                     {
 
                         //swComp = swAssembly.GetComponentByName(name);
                         swComp = Components[i];
-                        // MessageBox.Show(name);
+                      //  MessageBox.Show(swComp.Name2);
                         if (swComp != null)
                         {
-                            if (swComp.Name2.Contains(name))
+                           
+                           if (swComp.Name2.Contains(name))
                             {
+                               
                                 var vMatProps = swComp.MaterialPropertyValues;
                                 if (vMatProps == null)
                                 {
@@ -180,9 +199,33 @@ namespace Solidworksaddin
                                     }
                                     vMatProps = swCompDoc.MaterialPropertyValues;
                                 }
-                                vMatProps[0] = 1; //Red
-                                vMatProps[1] = 0; //Green
-                                vMatProps[2] = 0; //Blue
+                                if (color != "")
+                                {
+                                    switch (color)
+                                    {
+                                        case "Green":
+                                             vMatProps[0] = 0; //Red
+                                             vMatProps[1] = 1; //Green
+                                             vMatProps[2] = 0; //Blue
+                                            break;
+                                        case "Blue":
+                                             vMatProps[0] = 0; //Red
+                                             vMatProps[1] = 0; //Green
+                                             vMatProps[2] = 1; //Blue
+                                            break;
+                                        case "Red":
+                                             vMatProps[0] = 1; //Red
+                                             vMatProps[1] = 0; //Green
+                                             vMatProps[2] = 0; //Blue
+                                            break;
+                                        default:
+                                            vMatProps[0] = 1; //Red
+                                            vMatProps[1] = 0; //Green
+                                            vMatProps[2] = 0; //Blue
+                                            break;
+                                    }
+                                }
+                               
                                 swComp.MaterialPropertyValues = vMatProps;
                                 swModel.ClearSelection2(true);
                             }

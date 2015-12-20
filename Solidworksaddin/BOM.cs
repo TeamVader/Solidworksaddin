@@ -50,6 +50,7 @@ namespace Solidworksaddin
             public string order_number { get; set; }
             public string valid_order_number { get; set; }
             public bool IsStandard { get; set; }
+            public bool IsAssembly { get; set; }
             public string next_bigger_size { get; set; }
             public string next_smaller_Size { get; set; }
         }
@@ -282,19 +283,27 @@ namespace Solidworksaddin
 
                                             part_informations.manufacturer = swTable.get_Text(n, index_supplier);
                                             part_informations.order_number = swTable.get_Text(n, index_article_number);
+                                            part_informations.IsAssembly= false;
 
-                                            part_informations.part_number = PartNumber;
+                                            part_informations.part_number = PartNumber.Replace(" ",string.Empty);
                                             part_informations.quantity = quantity.ToString();
 
                                             //Custom part
                                             if (swComp.GetPathName().Contains(projectpath))
                                             {
-                                                part_informations.description = swComp.ReferencedConfiguration;
-                                                part_informations.item_number = numCustom_Part.ToString();
-                                                numCustom_Part++;
+                                                if (swComp.GetPathName().Contains(".sldasm") || swComp.GetPathName().Contains(".SLDASM"))
+                                                {
+                                                   // MessageBox.Show(swComp.GetPathName());
+                                                     part_informations.IsAssembly = true;
+                                                }
+                                                
+                                                    part_informations.description = swComp.ReferencedConfiguration;
+                                                    part_informations.item_number = numCustom_Part.ToString();
+                                                    numCustom_Part++;
 
-                                                Custom_Parts.Add(part_informations);
-                                                break;
+                                                    Custom_Parts.Add(part_informations);
+                                                    break;
+                                                
                                             }
 
                                             part_informations.description = swTable.get_Text(n, index_description);
@@ -345,11 +354,18 @@ namespace Solidworksaddin
                                             if (swComp.GetPathName().Contains(projectpath))
                                             {
 
-                                                part_informations.item_number = numCustom_Part.ToString();
-                                                numCustom_Part++;
+                                                if (swComp.GetPathName().Contains(".sldasm") || swComp.GetPathName().Contains(".SLDASM"))
+                                                {
+                                                    break;
+                                                }
+                                                else
+                                                {
+                                                    part_informations.item_number = numCustom_Part.ToString();
+                                                    numCustom_Part++;
 
-                                                Custom_Parts.Add(part_informations);
-                                                break;
+                                                    Custom_Parts.Add(part_informations);
+                                                    break;
+                                                }
                                             }
 
                                             part_informations.item_number = numStandard_Part.ToString();

@@ -908,6 +908,7 @@ namespace Solidworksaddin
                 List<Excel_Functions.Item_Keywords> excel_keywords = new List<Excel_Functions.Item_Keywords>();
                 string Bom_template = "C:\\Program Files\\SOLIDWORKS Corp\\SOLIDWORKS\\lang\\german\\bom_ae.sldbomtbt"; //bom-standard.sldbomtbt
                 string Configuration = null;
+                
                 String path = "";
                 String[] informations;
                 swModel = iSwApp.ActiveDoc;
@@ -920,14 +921,15 @@ namespace Solidworksaddin
                 if (swModel.GetType() == (int)swDocumentTypes_e.swDocASSEMBLY)
                 {
                     BomType = (int)swBomType_e.swBomType_Indented;
-                    Configuration = "Default";
+                   // Configuration = "Standard";
+                    Configuration = iSwApp.GetActiveConfigurationName(swModel.GetPathName());
                     nbrType = (int)swNumberingType_e.swNumberingType_Detailed;
 
                     swBOMAnnotation = (BomTableAnnotation)swModelDocExt.InsertBomTable3(Bom_template, 0, 0, BomType, Configuration, false, nbrType, true);
                     
-
                     if (swBOMAnnotation == null)
                     {
+                       
                         return;
                     }
                     swBOMFeature = (BomFeature)swBOMAnnotation.BomFeature;
@@ -1030,15 +1032,19 @@ namespace Solidworksaddin
                 if (swModel.GetType() == (int)swDocumentTypes_e.swDocASSEMBLY)
                 {
                     BomType = (int)swBomType_e.swBomType_Indented;
-                    Configuration = "Default";
+                    Configuration = iSwApp.GetActiveConfigurationName(swModel.GetPathName());
+               //     Configuration = "Standard";
                     nbrType = (int)swNumberingType_e.swNumberingType_Detailed;
 
                     swBOMAnnotation = (BomTableAnnotation)swModelDocExt.InsertBomTable3(Bom_template, 0, 0, BomType, Configuration, false, nbrType, true);
-             //       swModel.ClearSelection2(true);
+                    //       swModel.ClearSelection2(true);
 
                     if (swBOMAnnotation == null)
                     {
-                        return;
+                      
+                       
+                            return;
+                        
                     }
                     swBOMFeature = (BomFeature)swBOMAnnotation.BomFeature;
                     swBOMFeature.PartConfigurationGrouping = 3; //Display as on Item 2
@@ -1060,7 +1066,7 @@ namespace Solidworksaddin
                             if (value.Length >= 4)
                             {
                                 project_number = int.Parse(value);
-                                // MessageBox.Show(projectnumber.ToString());
+                              //  MessageBox.Show(project_number.ToString());
                                 break;
 
                             }
@@ -1078,10 +1084,10 @@ namespace Solidworksaddin
                     }
 
 
-                  //  ProcessBomFeature(swModel, swBOMFeature);
+                    //  ProcessBomFeature(swModel, swBOMFeature);
                     BOM.Get_Sorted_Part_Data(swModel, swBOMFeature, standard_parts, custom_parts, project_path);
-               //     Excel_Search(standard_parts);
-                  //  BOM.Get_Companies(standard_parts, companies);
+                    //     Excel_Search(standard_parts);
+                    //  BOM.Get_Companies(standard_parts, companies);
 
                     if (check_ordernumer)
                     {
@@ -1089,8 +1095,8 @@ namespace Solidworksaddin
                         BOM.Read_XML_Websearch_File(websearch_list);
                         BOM.Process_Order_Number(standard_parts, websearch_list);
                     }
-                   
-                    
+
+
                     if (check_database)
                     {
                         Excel_Functions.Create_Excel_Keywords_File_File();
@@ -1101,11 +1107,11 @@ namespace Solidworksaddin
                         swModel.ShowNamedView2("Isometric", -1);
                         swModel.ViewZoomtofit2();
                     }
-                    if (set_transparency)
+                /*    if (set_transparency)
                     {
                         Color_Functions.Set_Custom_part_Transparency(swModel, standard_parts, custom_parts);
-                        
-                    }
+
+                    }*/
                     if (create_bom)
                     {
                         Excel_Functions.Excel_BOM(swModel, standard_parts, custom_parts, project_number);
@@ -1119,6 +1125,10 @@ namespace Solidworksaddin
                     // Print the name of the configuration used for the BOM table
                     Debug.Print("Name of configuration used for BOM table: " + swBOMFeature.Configuration);
 
+                }
+                else
+                {
+                    MessageBox.Show("No Assembly Document");
                 }
             }
             catch (Exception ex)
