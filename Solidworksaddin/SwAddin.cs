@@ -89,12 +89,12 @@ namespace Solidworksaddin
 
         #region Excel Database Constants
 
-        public const int db_storage_location = 4;
-        public const int db_description = 5;
-        public const int db_technical_data = 6;
-        public const int db_material = 7;
-        public const int db_article_number = 9;
-        public const int db_distributor = 11;
+        public const int db_storage_location = 3;
+        public const int db_description = 4;
+        public const int db_technical_data = 5;
+        public const int db_material = 6;
+        public const int db_article_number = 8;
+        public const int db_distributor = 10;
 
         public const string path_to_database = @"C:\Users\alex\Desktop\Stock.xlsx";
         public const string path_to_database_desktop = @"C:\Users\alex\Desktop\Stock.xlsx";
@@ -905,6 +905,7 @@ namespace Solidworksaddin
                 BomFeature swBOMFeature = default(BomFeature);
                 List<BOM.BOM_Part_Informations> standard_parts = new List<BOM.BOM_Part_Informations>();
                 List<BOM.BOM_Part_Informations> custom_parts = new List<BOM.BOM_Part_Informations>();
+                List<Excel_Functions.Item_Keywords> excel_keywords = new List<Excel_Functions.Item_Keywords>();
                 string Bom_template = "C:\\Program Files\\SOLIDWORKS Corp\\SOLIDWORKS\\lang\\german\\bom_ae.sldbomtbt"; //bom-standard.sldbomtbt
                 string Configuration = null;
                 String path = "";
@@ -923,7 +924,7 @@ namespace Solidworksaddin
                     nbrType = (int)swNumberingType_e.swNumberingType_Detailed;
 
                     swBOMAnnotation = (BomTableAnnotation)swModelDocExt.InsertBomTable3(Bom_template, 0, 0, BomType, Configuration, false, nbrType, true);
-                    //       swModel.ClearSelection2(true);
+                    
 
                     if (swBOMAnnotation == null)
                     {
@@ -970,7 +971,9 @@ namespace Solidworksaddin
                     
                         BOM.Get_Sorted_Part_Data(swModel, swBOMFeature, standard_parts, custom_parts, project_path);
 
-                       
+                        Excel_Functions.Create_Excel_Keywords_File_File();
+                        Excel_Functions.Read_Excel_Keywords_File(excel_keywords);
+                        Excel_Functions.Excel_Search(standard_parts, excel_keywords);
                         Color_Functions.Set_Standard_part_Color(swModel, standard_parts, custom_parts);
                         Color_Functions.Set_Custom_part_Transparency(swModel, standard_parts, custom_parts);
                         swModel.ShowNamedView2("Isometric", -1);
@@ -994,11 +997,11 @@ namespace Solidworksaddin
 
         public void BOM_Assembly()
         {
-            BOM_Assembly_Options(true, true,true,true);
+            BOM_Assembly_Options(true, true,true,true,true);
         }
        
 
-        public void BOM_Assembly_Options(bool create_basket, bool create_bom, bool check_ordernumer, bool set_transparency)
+        public void BOM_Assembly_Options(bool create_basket, bool create_bom, bool check_ordernumer, bool set_transparency, bool check_database)
         {
 
             try
@@ -1010,6 +1013,7 @@ namespace Solidworksaddin
                 BomFeature swBOMFeature = default(BomFeature);
                 List<BOM.BOM_Part_Informations> standard_parts = new List<BOM.BOM_Part_Informations>();
                 List<BOM.BOM_Part_Informations> custom_parts = new List<BOM.BOM_Part_Informations>();
+                List<Excel_Functions.Item_Keywords> excel_keywords = new List<Excel_Functions.Item_Keywords>();
                 string Bom_template = "C:\\Program Files\\SOLIDWORKS Corp\\SOLIDWORKS\\lang\\german\\bom_ae.sldbomtbt"; //bom-standard.sldbomtbt
                 string Configuration = null;
                 String path = "";
@@ -1081,7 +1085,26 @@ namespace Solidworksaddin
 
                     if (check_ordernumer)
                     {
+                        BOM.Create_XML_Websearch_File();
+                        BOM.Read_XML_Websearch_File(websearch_list);
                         BOM.Process_Order_Number(standard_parts, websearch_list);
+                    }
+                   
+                    
+                    if (check_database)
+                    {
+                        Excel_Functions.Create_Excel_Keywords_File_File();
+                        Excel_Functions.Read_Excel_Keywords_File(excel_keywords);
+                        Excel_Functions.Excel_Search(standard_parts, excel_keywords);
+                        Color_Functions.Set_Standard_part_Color(swModel, standard_parts, custom_parts);
+                        Color_Functions.Set_Custom_part_Transparency(swModel, standard_parts, custom_parts);
+                        swModel.ShowNamedView2("Isometric", -1);
+                        swModel.ViewZoomtofit2();
+                    }
+                    if (set_transparency)
+                    {
+                        Color_Functions.Set_Custom_part_Transparency(swModel, standard_parts, custom_parts);
+                        
                     }
                     if (create_bom)
                     {
@@ -1091,11 +1114,7 @@ namespace Solidworksaddin
                     {
                         BOM.Create_Project_Basket_by_Company(standard_parts, project_path, project_number);
                     }
-                    if (set_transparency)
-                    {
-                        Color_Functions.Set_Custom_part_Transparency(swModel, standard_parts, custom_parts);
-                        Color_Functions.Set_Standard_part_Color(swModel, standard_parts, custom_parts);
-                    }
+
 
                     // Print the name of the configuration used for the BOM table
                     Debug.Print("Name of configuration used for BOM table: " + swBOMFeature.Configuration);
@@ -1294,7 +1313,7 @@ namespace Solidworksaddin
             BOM.Read_XML_Websearch_File(websearch_list);
             BOM_Assembly_Options(true, true);*/
 
-            BOM_Assembly_Options(false,false,false,true);
+            BOM_Assembly_Options(false,false,false,true,true);
 
             
         }

@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -192,7 +193,7 @@ namespace Solidworksaddin
         }
 
 
-        public static void Excel_Search(List<BOM.BOM_Part_Informations> Standard_parts)
+        public static void Excel_Search(List<BOM.BOM_Part_Informations> Standard_parts, List<Item_Keywords> keywords)
         {
 
             string path_to_db = "";
@@ -238,6 +239,7 @@ namespace Solidworksaddin
                     string search_value = "";
                     int index = 0;
                     //string[] temp_search = new string[10];
+                    Microsoft.Office.Interop.Excel.Range findrange;
                     Microsoft.Office.Interop.Excel.Range range = sheet.get_Range("A" + start_row.ToString(), "L" + end_row.ToString());
                     object[,] values = (object[,])range.Value2;
                     int NumRow = 1;
@@ -250,20 +252,32 @@ namespace Solidworksaddin
                         }
                         NumRow++;
                     }
+                    
 
                     for (int i = 0; i < Standard_parts.Count; i++)
                     {
+
+                       Standard_parts[i].IsStandard = false;
                         for (int j = 0; j < end_row; j++)
                         {
-
-                            if (search_array[j, SwAddin.db_description].Contains(Standard_parts[i].part_number) || search_array[j, SwAddin.db_technical_data].Contains(Standard_parts[i].description))
+                           
+                            if (search_array[j, SwAddin.db_article_number] != "" && search_array[j, SwAddin.db_article_number] != null)
                             {
-
-                                //  index = j + start_row;
+                                if (Standard_parts[i].part_number != null)
+                                {
+                                    if (Standard_parts[i].part_number.Contains(search_array[j, SwAddin.db_article_number]))
+                                    {
+                                      //  MessageBox.Show(string.Format("Part : {0} found Article Number: {1} row number : {2} storage location : {3} ", Standard_parts[i].part_number, search_array[j, SwAddin.db_article_number], j + start_row, search_array[j, SwAddin.db_storage_location]));
+                                        Standard_parts[i].IsStandard = true;
+                                        Standard_parts[i].storage_location = search_array[j, SwAddin.db_storage_location];
+                                        break;
+                                    }
+                                }
                             }
+                            
 
                         }
-
+                        
 
                     }
 
@@ -271,8 +285,18 @@ namespace Solidworksaddin
                     // Close the workbook without saving changes.
                     workbook.Close(false, Type.Missing, Type.Missing);
 
+
                     // Close the Excel server.
                     excel_app.Quit();
+
+
+                    foreach (Process process in Process.GetProcessesByName("Excel"))
+                    {
+                        if (!string.IsNullOrEmpty(process.ProcessName) && process.StartTime.AddSeconds(+10) > DateTime.Now)
+                        {
+                            process.Kill();
+                        }
+                    }
 
                 }
                 catch (Exception ex)
@@ -290,10 +314,63 @@ namespace Solidworksaddin
         {
 
             List<Item_Keywords> Item_Keywords_list = new List<Item_Keywords>();
-            Item_Keywords_list.Add(new Item_Keywords("Festo", new List<string>{ "bubu", "sigi" }));
-            Item_Keywords_list.Add(new Item_Keywords("Hanser", new List<string> { "bubu", "sigi" }));
-            Item_Keywords_list.Add(new Item_Keywords("Igus", new List<string> { "bubu", "sigi" }));
-            Item_Keywords_list.Add(new Item_Keywords("Würth", new List<string> { "bubu", "sigi" }));
+            Item_Keywords_list.Add(new Item_Keywords("Senkschraube", new List<string> {"Se-Schr-In-6kt" }));
+            Item_Keywords_list.Add(new Item_Keywords("Zylinderkopfschraube", new List<string> {"Zyl-Schr-In-6kt", "DIN 912"}));
+            Item_Keywords_list.Add(new Item_Keywords("Sechskantschraube", new List<string> {"6kt-Schr" ,"DIN 933" }));
+            Item_Keywords_list.Add(new Item_Keywords("Zylinderschrauben mit niedrigem Kopf", new List<string> {}));
+            Item_Keywords_list.Add(new Item_Keywords("Linsenkopfschraube", new List<string> {"Ls-Schr-In-6kt" }));
+            Item_Keywords_list.Add(new Item_Keywords("Pass-Schulterschrauben", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Zylinderstifte geschl.", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Schmiernippel", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Seegerring Innen", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Seegerring Aussen", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Passfedern", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Zylinderstifte ungeschl.", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Blindnietmuttern (Tubtara)", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Blindnieten", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("6kt. Distanzhalter Innen-Aussengwinde", new List<string> { }));
+            Item_Keywords_list.Add(new Item_Keywords("Ringschrauben", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Nutmuttern", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("6kt. Muttern 0.5", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Sicherungsmuttern", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Hutmuttern", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Senkscheiben", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Carrosseriescheibe", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Federringe", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Schnorr", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("RIP-Lock Scheiben", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Zahnscheibe", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Gewindefurchende Schrauben", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Item Nutensteine", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Phönix Nutensteine", new List<string> { }));
+            Item_Keywords_list.Add(new Item_Keywords("Schalldämpfer", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Dichtring", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Reduziernippel", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Blindstopfen", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Steckverbindrung reduz.", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("T-Steckverbindung reduz.", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Y-Steckverbinddung redzu.", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Steckverschraubung", new List<string> {}));
+            Item_Keywords_list.Add(new Item_Keywords("L-Steckverschraubung", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Schott-Steckverbindung", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Drossel - Rückschlagventil", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("X-Steckverbindung", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Schlauchschelle", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Doppelnippel", new List<string> {}));
+            Item_Keywords_list.Add(new Item_Keywords("Sperr-Steckverschraubung", new List<string> {}));
+            Item_Keywords_list.Add(new Item_Keywords("Passscheiben", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Splinten", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Pneumatik Schläuche ", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Sensorkabel Dose", new List<string> {  }));
+            Item_Keywords_list.Add(new Item_Keywords("Sensorhalter", new List<string> {}));
+            Item_Keywords_list.Add(new Item_Keywords("Gabellichtschranke", new List<string> {}));
+            Item_Keywords_list.Add(new Item_Keywords("Ventileinsatz", new List<string> { }));
+            Item_Keywords_list.Add(new Item_Keywords("Reflexions-Lichtschalter", new List<string> { }));
+            Item_Keywords_list.Add(new Item_Keywords("Gewindestifte", new List<string> { }));
+            Item_Keywords_list.Add(new Item_Keywords("Splinten", new List<string> { }));
+
+            
+            
 
 
 
@@ -346,27 +423,34 @@ namespace Solidworksaddin
         
         public static void Read_Excel_Keywords_File(List<Item_Keywords> keywords_list)
         {
-
+            List<string> keywords = new List<string>() ;
             try
             {
                 if (File.Exists(SwAddin.path_to_excel_keywords_file))
                 {
 
                     XmlDocument xdoc = new XmlDocument();
-                    xdoc.Load(SwAddin.path_to_websearch_file);
+                    xdoc.Load(SwAddin.path_to_excel_keywords_file);
 
                     foreach (XmlNode Itemkeywords in xdoc.SelectNodes("/Item_Keywords_for_Excel_Search/*"))
                     {
                         if (Itemkeywords != null)
                         {
-                          //  keywords_list.Add(new Item_Keywords(Itemkeywords["ID"].InnerText, Itemkeywords["URL"].InnerText));
-                            Debug.Print(Itemkeywords["ID"].InnerText + Itemkeywords["URL"].InnerText + Itemkeywords["NoMatch"].InnerText);
+                            for (int i = 1; i < Itemkeywords.ChildNodes.Count; i++)
+                            {
+                                keywords.Add(Itemkeywords.ChildNodes[i].InnerText);
+                                Debug.Print(Itemkeywords.ChildNodes[i].InnerText);
+                                //  
+                            }
+                            keywords_list.Add(new Item_Keywords(Itemkeywords["ID"].InnerText, keywords));
+                            Debug.Print(Itemkeywords["ID"].InnerText);
                         }
 
                     }
 
 
                 }
+                
             }
             catch (Exception ex)
             {

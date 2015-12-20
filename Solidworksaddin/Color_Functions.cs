@@ -39,8 +39,16 @@ namespace Solidworksaddin
 
                  foreach(BOM.BOM_Part_Informations part in Standard_Parts)
                  {
-                    
+                     if (part.IsStandard)
+                     {
+                         Set_transparency(swModel, part.part_number);
+                  
+                     }
+                     else
+                     {
                          Change_Color(swModel, part.part_number);
+
+                     }
                      
                     
                  }
