@@ -43,7 +43,7 @@ namespace Solidworksaddin
                    {
                        if (part.IsStandard)
                        {
-                        //  MessageBox.Show("part number" + part.part_number);
+                       //  MessageBox.Show("part number" + part.part_number);
 
                            Set_transparency(swModel,part.part_number);
 

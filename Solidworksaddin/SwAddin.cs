@@ -1308,23 +1308,12 @@ namespace Solidworksaddin
         */
         public void Test_Function()
         {
-            //CheckInterference();
-            //BOM_Assembly();
-            /*
-            string item_number = "0450.10.76.3";
-           // string searchurl = "https://www.festo.com/net/de_de/SupportPortal/InternetSearch.aspx?q=";
-            string searchurl = "http://www.igus.ch/Search?q=";
-
-            BOM_Assembly_Options(false, false);
-            //string nomatches = "WarningMessage";
-            string nomatches = "Leider lieferte Ihre Suchanfrage keine Treffer. ";
-            BOM.Check_if_item_number_exists(searchurl, item_number, nomatches);*/
-         /*   BOM.Create_XML_Websearch_File();
-            BOM.Read_XML_Websearch_File(websearch_list);
-            BOM_Assembly_Options(true, true);*/
-
-            BOM_Assembly_Options(false,false,false,true,true);
-
+            Regex Screw = new Regex(@"[M][-+]?([0-9]*\.[0-9]+|[0-9]+)[x][-+]?([0-9]*\.[0-9]+|[0-9]+)");
+            Match match = Screw.Match("Zyl-Schr-In-6kt DIN 912 M12x300 znb");
+            if (match.Success)
+            {
+                MessageBox.Show(match.Value);
+            }
             
         }
 

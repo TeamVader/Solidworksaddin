@@ -229,6 +229,8 @@ namespace Solidworksaddin
                     Type.Missing, Type.Missing, Type.Missing, Type.Missing,
                     Type.Missing, Type.Missing);
 
+                    Regex Screw_regex = new Regex(@"[M][-+]?([0-9]*\.[0-9]+|[0-9]+)[x][-+]?([0-9]*\.[0-9]+|[0-9]+)");
+                    Match match;
 
                     Microsoft.Office.Interop.Excel.Worksheet sheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets["Stock"];
                     int NumCols = 10;
@@ -236,6 +238,14 @@ namespace Solidworksaddin
                     int end_row = 4000;
                     string[] Fields = new string[NumCols];
                     string[,] search_array = new string[end_row, NumCols];
+                    string keyword = "";
+                    string size = "";
+                    int diameter = 0;
+                    int length = 0;
+                    bool search_success = false;
+
+
+                    //string[,] temp_search = new string[3
                     string search_value = "";
                     int index = 0;
                     //string[] temp_search = new string[10];
@@ -257,25 +267,96 @@ namespace Solidworksaddin
                     for (int i = 0; i < Standard_parts.Count; i++)
                     {
 
-                       Standard_parts[i].IsStandard = false;
-                        for (int j = 0; j < end_row; j++)
+                        Standard_parts[i].IsStandard = false;
+                        keyword = "";
+                        size = "";
+                        search_success = false;
+
+
+                        foreach (Item_Keywords itemkeyword in keywords)
                         {
-                           
-                            if (search_array[j, SwAddin.db_article_number] != "" && search_array[j, SwAddin.db_article_number] != null)
+                            for (int k = 0; k < itemkeyword.Keywords.Count; k++)
                             {
-                                if (Standard_parts[i].part_number != null)
+                                if (itemkeyword.Keywords[k] != "")
                                 {
-                                    if (Standard_parts[i].part_number.Contains(search_array[j, SwAddin.db_article_number]))
+                                    if (Standard_parts[i].part_number.Contains(itemkeyword.Keywords[k]))
                                     {
-                                      //  MessageBox.Show(string.Format("Part : {0} found Article Number: {1} row number : {2} storage location : {3} ", Standard_parts[i].part_number, search_array[j, SwAddin.db_article_number], j + start_row, search_array[j, SwAddin.db_storage_location]));
-                                        Standard_parts[i].IsStandard = true;
-                                        Standard_parts[i].storage_location = search_array[j, SwAddin.db_storage_location];
+                                        //Matched!!!
+                                        keyword = itemkeyword.Id;
+                                        match = Screw_regex.Match(Standard_parts[i].part_number);
+                                        if (match.Success)
+                                        {
+                                            size = match.Value;
+                                        }
+                                        else
+                                        {
+                                            keyword = "";
+                                        }
+
                                         break;
                                     }
                                 }
                             }
-                            
+                            if (keyword != "")
+                            {
+                                //Match found
+                                break;
+                            }
+                        }
 
+                        ///Search Through article number
+                        for (int j = 0; j < end_row; j++)
+                        {
+
+                            if (search_array[j, SwAddin.db_article_number] != "" && search_array[j, SwAddin.db_article_number] != null)
+                            {
+                                if (Standard_parts[i].part_number != null)
+                                {
+                                   
+                                    if (Standard_parts[i].part_number.Contains(search_array[j, SwAddin.db_article_number]))
+                                    {
+                                        //  MessageBox.Show(string.Format("Part : {0} found Article Number: {1} row number : {2} storage location : {3} ", Standard_parts[i].part_number, search_array[j, SwAddin.db_article_number], j + start_row, search_array[j, SwAddin.db_storage_location]));
+                                        Standard_parts[i].IsStandard = true;
+                                        Standard_parts[i].storage_location = search_array[j, SwAddin.db_storage_location];
+                                        search_success = true;
+                                        break;
+                                    }
+
+
+                                }
+                            }
+
+
+                        }
+
+                        if (keyword != "" && size != "" && !search_success)
+                        {
+                           // MessageBox.Show(keyword + "soie" + size);
+                            //search through database and sizes
+                            for (int j = 0; j < end_row; j++)
+                            {
+
+                                if (search_array[j, SwAddin.db_technical_data] != "" && search_array[j, SwAddin.db_technical_data] != null)
+                                {
+                                    if (Standard_parts[i].part_number != null)
+                                    {
+                                        //Lucky Punch
+                                       // MessageBox.Show(search_array[j, SwAddin.db_technical_data] + search_array[j, SwAddin.db_description]);
+                                        match = Screw_regex.Match(search_array[j, SwAddin.db_technical_data]);
+                                        if (match.Success)
+                                        {
+                                            if (match.Value == size && search_array[j, SwAddin.db_description] == keyword)
+                                            {
+                                                Standard_parts[i].IsStandard = true;
+                                                Standard_parts[i].storage_location = search_array[j, SwAddin.db_storage_location];
+                                                search_success = true;
+                                                MessageBox.Show(string.Format("lucky Day : {0}", search_array[j, SwAddin.db_storage_location]));
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                         
 
@@ -423,7 +504,6 @@ namespace Solidworksaddin
         
         public static void Read_Excel_Keywords_File(List<Item_Keywords> keywords_list)
         {
-            List<string> keywords = new List<string>() ;
             try
             {
                 if (File.Exists(SwAddin.path_to_excel_keywords_file))
@@ -436,6 +516,8 @@ namespace Solidworksaddin
                     {
                         if (Itemkeywords != null)
                         {
+                            List<string> keywords = new List<string>();
+
                             for (int i = 1; i < Itemkeywords.ChildNodes.Count; i++)
                             {
                                 keywords.Add(Itemkeywords.ChildNodes[i].InnerText);
@@ -444,6 +526,7 @@ namespace Solidworksaddin
                             }
                             keywords_list.Add(new Item_Keywords(Itemkeywords["ID"].InnerText, keywords));
                             Debug.Print(Itemkeywords["ID"].InnerText);
+                            
                         }
 
                     }

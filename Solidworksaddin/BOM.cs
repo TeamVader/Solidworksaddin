@@ -285,7 +285,7 @@ namespace Solidworksaddin
                                             part_informations.order_number = swTable.get_Text(n, index_article_number);
                                             part_informations.IsAssembly= false;
 
-                                            part_informations.part_number = PartNumber.Replace(" ",string.Empty);
+                                            part_informations.part_number = PartNumber.TrimStart();
                                             part_informations.quantity = quantity.ToString();
 
                                             //Custom part
