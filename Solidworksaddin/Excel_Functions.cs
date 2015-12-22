@@ -230,7 +230,9 @@ namespace Solidworksaddin
                     Type.Missing, Type.Missing);
 
                     Regex Screw_regex = new Regex(@"[M][-+]?([0-9]*\.[0-9]+|[0-9]+)[x][-+]?([0-9]*\.[0-9]+|[0-9]+)");
+                    Regex Digit_regex = new Regex(@"[-+]?([0-9]*\.[0-9]+|[0-9]+)");
                     Match match;
+                    Match size_match;
 
                     Microsoft.Office.Interop.Excel.Worksheet sheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Sheets["Stock"];
                     int NumCols = 10;
@@ -240,9 +242,14 @@ namespace Solidworksaddin
                     string[,] search_array = new string[end_row, NumCols];
                     string keyword = "";
                     string size = "";
-                    int diameter = 0;
-                    int length = 0;
+                    double diameter = 0;
+                    double length = 0;
+                    double act_diameter = 0;
+                    double act_length = 0;
+                    double last_bigger_length = 1000;
+                    double last_smaller_length = 0;
                     bool search_success = false;
+                    
 
 
                     //string[,] temp_search = new string[3
@@ -287,6 +294,19 @@ namespace Solidworksaddin
                                         if (match.Success)
                                         {
                                             size = match.Value;
+                                            size_match = Digit_regex.Match(size);
+                                            if (size_match.Success)
+                                            {
+                                                diameter = double.Parse(size_match.Value);
+                                            }
+                                            size_match =  size_match.NextMatch();
+                                            if (size_match.Success)
+                                            {
+                                                length = double.Parse(size_match.Value);
+                                         //       MessageBox.Show(string.Format("diameter {0} length {1}", diameter, length));
+
+                                            }
+
                                         }
                                         else
                                         {
@@ -350,13 +370,59 @@ namespace Solidworksaddin
                                                 Standard_parts[i].IsStandard = true;
                                                 Standard_parts[i].storage_location = search_array[j, SwAddin.db_storage_location];
                                                 search_success = true;
+                                                Standard_parts[i].next_bigger_size = "";
+                                                Standard_parts[i].next_smaller_Size = "";
                                                 MessageBox.Show(string.Format("lucky Day : {0}", search_array[j, SwAddin.db_storage_location]));
                                                 break;
                                             }
+                                        
+                                            if (length != 0 && diameter != 0)
+                                            {
+                                                size_match = Digit_regex.Match(match.Value);
+                                                if (size_match.Success)
+                                                {
+                                                    act_diameter = double.Parse(size_match.Value);
+                                                }
+                                                size_match = size_match.NextMatch();
+                                                if (size_match.Success)
+                                                {
+                                                    act_length = double.Parse(size_match.Value);
+                                                    //       MessageBox.Show(string.Format("diameter {0} length {1}", diameter, length));
+
+                                                }
+
+                                                if (act_diameter == diameter && act_length != 0)
+                                                {
+                                                    if (act_length < length)
+                                                    {
+                                                        if (act_length > last_smaller_length)
+                                                        {
+                                                            last_smaller_length = act_length;
+                                                            Standard_parts[i].next_smaller_Size = search_array[j, SwAddin.db_technical_data];
+
+                                                        }
+                                                    }
+                                                    else if(act_length > length)
+                                                    {
+                                                        if (act_length < last_bigger_length)
+                                                        {
+                                                            last_bigger_length = act_length;
+                                                            Standard_parts[i].next_bigger_size = search_array[j, SwAddin.db_technical_data];
+                                                        }
+
+                                                       
+                                                    }
+                                                }
+                                            }
+                                            
                                         }
+
                                     }
+
                                 }
                             }
+                            MessageBox.Show(string.Format("Bigger {0} Smaller {1}", Standard_parts[i].next_bigger_size, Standard_parts[i].next_smaller_Size));
+
                         }
                         
 
